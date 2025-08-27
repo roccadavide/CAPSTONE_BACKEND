@@ -1,9 +1,12 @@
 package daviderocca.CAPSTONE_BACKEND.security;
 
-import buildweeek.bw2.entities.Utente;
-import buildweeek.bw2.exceptions.UnauthorizedException;
-import buildweeek.bw2.services.UtenteService;
-import buildweeek.bw2.tools.JWTTools;
+
+
+
+import daviderocca.CAPSTONE_BACKEND.entities.User;
+import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedException;
+import daviderocca.CAPSTONE_BACKEND.services.UserService;
+import daviderocca.CAPSTONE_BACKEND.tools.JWTTools;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +29,7 @@ public class JWTFilter extends OncePerRequestFilter {
     private JWTTools jwtTools;
 
    @Autowired
-   private UtenteService utenteService;
+   private UserService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -38,9 +41,9 @@ public class JWTFilter extends OncePerRequestFilter {
         String accessToken = authHeader.replace("Bearer ", "");
         jwtTools.verifyToken(accessToken);
 
-        UUID idUtente = UUID.fromString(jwtTools.extractIdFromToken(accessToken));
-        Utente utenteAttivo = this.utenteService.findUtenteById(idUtente);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(utenteAttivo, null, utenteAttivo.getAuthorities());
+        UUID idUser = UUID.fromString(jwtTools.extractIdFromToken(accessToken));
+        User activeUser = this.userService.findUserById(idUser);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(activeUser, null, activeUser.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);

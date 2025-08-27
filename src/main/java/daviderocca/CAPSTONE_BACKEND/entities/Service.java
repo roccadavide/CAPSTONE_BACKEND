@@ -41,8 +41,7 @@ public class Service {
     @JoinColumn(name = "category")
     private Category category;
 
-    @OneToMany
-    @JoinColumn(name = "booking_id")
+    @OneToMany(mappedBy = "service")
     private List<Booking> bookings;
 
     public Service(String title, String durationMin, String price, String shortZ, String description, String[] images, Category category) {

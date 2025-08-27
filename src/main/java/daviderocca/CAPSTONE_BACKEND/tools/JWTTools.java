@@ -1,10 +1,8 @@
 package daviderocca.CAPSTONE_BACKEND.tools;
 
 
-
-import buildweeek.bw2.entities.Cliente;
-import buildweeek.bw2.entities.Utente;
-import buildweeek.bw2.exceptions.UnauthorizedException;
+import daviderocca.CAPSTONE_BACKEND.entities.User;
+import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,12 +16,12 @@ public class JWTTools {
     @Value("${JWT.SECRET}")
     private String secret;
 
-    public String createTokenUtente(Utente utente) {
+    public String createTokenUser(User user) {
 
         return Jwts.builder()
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
-                .subject(String.valueOf(utente.getIdUtente()))
+                .subject(String.valueOf(user.getUserId()))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .compact();
     }

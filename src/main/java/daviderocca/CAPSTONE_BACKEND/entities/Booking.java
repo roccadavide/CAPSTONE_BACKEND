@@ -6,12 +6,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "booking")
+@Table(name = "bookings")
 @NoArgsConstructor
 @Getter
 @Setter
@@ -33,29 +32,30 @@ public class Booking {
     private String customerPhone;
 
     @Column(name = "start_time")
-    private LocalDate startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
-    private LocalDate endTime;
+    private LocalDateTime endTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "booking_status")
     private BookingStatus bookingStatus;
 
     private String notes;
 
     @Column(name = "created_at")
-    private LocalDate createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne
-    @JoinColumn(name = "service")
+    @JoinColumn(name = "service_id")
     private Service service;
 
     @ManyToOne
-    @JoinColumn(name = "user")
+    @JoinColumn(name = "user_id")
     private User user;
 
 
-    public Booking(String customerName, String customerEmail, String customerPhone, LocalDate startTime, LocalDate endTime, BookingStatus bookingStatus, String notes, LocalDate createdAt, Service service, User user) {
+    public Booking(String customerName, String customerEmail, String customerPhone, LocalDateTime startTime, LocalDateTime endTime, BookingStatus bookingStatus, String notes, Service service, User user) {
         this.customerName = customerName;
         this.customerEmail = customerEmail;
         this.customerPhone = customerPhone;
@@ -63,7 +63,6 @@ public class Booking {
         this.endTime = endTime;
         this.bookingStatus = bookingStatus;
         this.notes = notes;
-        this.createdAt = createdAt;
         this.service = service;
         this.user = user;
     }

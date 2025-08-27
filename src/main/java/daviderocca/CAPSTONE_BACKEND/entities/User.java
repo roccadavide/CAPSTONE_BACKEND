@@ -7,18 +7,21 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @NoArgsConstructor
 @Getter
 @Setter
 @JsonIgnoreProperties({"password","authorities","enabled","accountNonExpired","credentialsNonExpired","accountNonLocked"})
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue
@@ -37,21 +40,18 @@ public class User {
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role = Role.COSTUMER;
 
-    @OneToMany
-    @JoinColumn(name = "booking_id")
+    @OneToMany(mappedBy = "user")
     private List<Booking> bookings;
 
 
-    public User(UUID userId, String name, String surname, String email, String password, String phone) {
-        this.userId = userId;
+    public User(String name, String surname, String email, String password, String phone) {
         this.name = name;
         this.surname = surname;
         this.email = email;
         this.password = password;
         this.phone = phone;
-        this.role = Role.COSTUMER;
     }
 
     @Override
@@ -65,5 +65,16 @@ public class User {
                 ", phone='" + phone + '\'' +
                 ", role=" + role +
                 '}';
+    }
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public String getUsername() {
+        return "";
     }
 }

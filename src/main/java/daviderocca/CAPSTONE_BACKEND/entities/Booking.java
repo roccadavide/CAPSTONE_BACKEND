@@ -1,4 +1,85 @@
 package daviderocca.CAPSTONE_BACKEND.entities;
 
+import daviderocca.CAPSTONE_BACKEND.enums.BookingStatus;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Entity
+@Table(name = "booking")
+@NoArgsConstructor
+@Getter
+@Setter
 public class Booking {
+
+    @Id
+    @GeneratedValue
+    @Setter(AccessLevel.NONE)
+    @Column(name = "booking_id")
+    private UUID bookingId;
+
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "customer_email")
+    private String customerEmail;
+
+    @Column(name = "customer_phone")
+    private String customerPhone;
+
+    @Column(name = "start_time")
+    private LocalDate startTime;
+
+    @Column(name = "end_time")
+    private LocalDate endTime;
+
+    @Column(name = "booking_status")
+    private BookingStatus bookingStatus;
+
+    private String notes;
+
+    @Column(name = "created_at")
+    private LocalDate createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "service")
+    private Service service;
+
+    @ManyToOne
+    @JoinColumn(name = "user")
+    private User user;
+
+
+    public Booking(String customerName, String customerEmail, String customerPhone, LocalDate startTime, LocalDate endTime, BookingStatus bookingStatus, String notes, LocalDate createdAt, Service service, User user) {
+        this.customerName = customerName;
+        this.customerEmail = customerEmail;
+        this.customerPhone = customerPhone;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.bookingStatus = bookingStatus;
+        this.notes = notes;
+        this.createdAt = createdAt;
+        this.service = service;
+        this.user = user;
+    }
+
+    @Override
+    public String toString() {
+        return "Booking{" +
+                "bookingId=" + bookingId +
+                ", customerName='" + customerName + '\'' +
+                ", customerEmail='" + customerEmail + '\'' +
+                ", customerPhone='" + customerPhone + '\'' +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", bookingStatus=" + bookingStatus +
+                ", notes='" + notes + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
+    }
 }

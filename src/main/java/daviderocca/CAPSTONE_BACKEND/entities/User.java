@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 import java.util.UUID;
 
 
@@ -37,6 +39,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToMany
+    @JoinColumn(name = "booking_id")
+    private List<Booking> bookings;
+
 
     public User(UUID userId, String name, String surname, String email, String password, String phone) {
         this.userId = userId;
@@ -46,5 +52,18 @@ public class User {
         this.password = password;
         this.phone = phone;
         this.role = Role.COSTUMER;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", phone='" + phone + '\'' +
+                ", role=" + role +
+                '}';
     }
 }

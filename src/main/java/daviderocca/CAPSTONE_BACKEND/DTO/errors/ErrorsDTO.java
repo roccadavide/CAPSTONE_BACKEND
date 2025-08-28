@@ -1,4 +1,4 @@
-package daviderocca.CAPSTONE_BACKEND.DTO.error;
+package daviderocca.CAPSTONE_BACKEND.DTO.errors;
 
 import java.time.LocalDateTime;
 

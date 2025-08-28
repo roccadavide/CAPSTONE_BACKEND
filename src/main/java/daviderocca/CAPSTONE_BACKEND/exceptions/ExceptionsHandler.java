@@ -1,8 +1,8 @@
 package daviderocca.CAPSTONE_BACKEND.exceptions;
 
 
-import daviderocca.CAPSTONE_BACKEND.DTO.error.ErrorsDTO;
-import daviderocca.CAPSTONE_BACKEND.DTO.error.ErrorsWithListDTO;
+import daviderocca.CAPSTONE_BACKEND.DTO.errors.ErrorsDTO;
+import daviderocca.CAPSTONE_BACKEND.DTO.errors.ErrorsWithListDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,9 +26,9 @@ public class ExceptionsHandler {
         return new ErrorsDTO(ex.getMessage(), LocalDateTime.now());
     }
 
-    @ExceptionHandler(NotFoundException.class)
+    @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorsDTO handleNotFound(NotFoundException ex) {
+    public ErrorsDTO handleNotFound(ResourceNotFoundException ex) {
         return new ErrorsDTO(ex.getMessage(), LocalDateTime.now());
     }
 

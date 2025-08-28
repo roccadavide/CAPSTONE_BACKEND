@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "category")
+@Table(name = "categories")
 @NoArgsConstructor
 @Getter
 @Setter
@@ -22,20 +22,19 @@ public class Category {
     @Column(name = "category_id")
     private UUID categoryId;
 
-    private String key;
+    @Column(name = "category_key")
+    private String categoryKey;
 
     private String label;
 
-    @OneToMany
-    @JoinColumn(name = "id_product")
+    @OneToMany(mappedBy = "category")
     private List<Product> products;
 
-    @OneToMany
-    @JoinColumn(name = "id_service")
+    @OneToMany(mappedBy = "category")
     private List<Service> services;
 
-    public Category(String key, String label) {
-        this.key = key;
+    public Category(String categoryKey, String label) {
+        this.categoryKey = categoryKey;
         this.label = label;
     }
 
@@ -43,7 +42,7 @@ public class Category {
     public String toString() {
         return "Category{" +
                 "categoryId=" + categoryId +
-                ", key='" + key + '\'' +
+                ", categoryKey='" + categoryKey + '\'' +
                 ", label='" + label + '\'' +
                 '}';
     }

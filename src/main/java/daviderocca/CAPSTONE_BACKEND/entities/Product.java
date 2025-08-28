@@ -6,11 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Arrays;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product")
+@Table(name = "products")
 @NoArgsConstructor
 @Getter
 @Setter
@@ -24,19 +25,23 @@ public class Product {
 
     private String name;
 
-    private String price;
+    private BigDecimal price;
 
     private String description;
 
-    private String[] images;
+    @ElementCollection
+    private List<String> images;
 
     private int stock;
 
     @ManyToOne
-    @JoinColumn(name = "category")
+    @JoinColumn(name = "category_id")
     private Category category;
 
-    public Product(String name, String price, String description, String[] images, int stock, Category category) {
+    @OneToMany(mappedBy = "product")
+    private List<OrderItem> orderItems;
+
+    public Product(String name, BigDecimal price, String description, List<String> images, int stock, Category category) {
         this.name = name;
         this.price = price;
         this.description = description;
@@ -52,7 +57,7 @@ public class Product {
                 ", name='" + name + '\'' +
                 ", price='" + price + '\'' +
                 ", description='" + description + '\'' +
-                ", images=" + Arrays.toString(images) +
+                ", images=" + images +
                 ", stock=" + stock +
                 ", category=" + category +
                 '}';

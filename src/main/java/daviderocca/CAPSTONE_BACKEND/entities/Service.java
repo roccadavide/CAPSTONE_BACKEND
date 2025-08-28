@@ -7,12 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Arrays;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "service")
+@Table(name = "services")
 @NoArgsConstructor
 @Getter
 @Setter
@@ -27,44 +27,45 @@ public class Service {
     private String title;
 
     @Column(name = "duration_min")
-    private String durationMin;
+    private int durationMin;
 
-    private String price;
+    private BigDecimal price;
 
-    private String shortZ;
+    private String shortDescription;
 
     private  String description;
 
-    private String[] images;
+    @ElementCollection
+    private List<String> images;
 
     @ManyToOne
-    @JoinColumn(name = "category")
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @OneToMany(mappedBy = "service")
     private List<Booking> bookings;
 
-    public Service(String title, String durationMin, String price, String shortZ, String description, String[] images, Category category) {
+    public Service(String title, int durationMin, BigDecimal price, String shortDescription, String description, List<String> images, Category category) {
         this.title = title;
         this.durationMin = durationMin;
         this.price = price;
-        this.shortZ = shortZ;
+        this.shortDescription = shortDescription;
         this.description = description;
         this.images = images;
         this.category = category;
     }
+
 
     @Override
     public String toString() {
         return "Service{" +
                 "serviceId=" + serviceId +
                 ", title='" + title + '\'' +
-                ", durationMin='" + durationMin + '\'' +
+                ", durationMin=" + durationMin +
                 ", price='" + price + '\'' +
-                ", shortZ='" + shortZ + '\'' +
+                ", shortDescription='" + shortDescription + '\'' +
                 ", description='" + description + '\'' +
-                ", images=" + Arrays.toString(images) +
-                ", category=" + category +
+                ", images=" + images +
                 '}';
     }
 }

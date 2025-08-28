@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Service {
+public class ServiceItem {
 
     @Id
     @GeneratedValue
@@ -45,7 +45,7 @@ public class Service {
     @OneToMany(mappedBy = "service")
     private List<Booking> bookings;
 
-    public Service(String title, int durationMin, BigDecimal price, String shortDescription, String description, List<String> images, Category category) {
+    public ServiceItem(String title, int durationMin, BigDecimal price, String shortDescription, String description, List<String> images, Category category) {
         this.title = title;
         this.durationMin = durationMin;
         this.price = price;

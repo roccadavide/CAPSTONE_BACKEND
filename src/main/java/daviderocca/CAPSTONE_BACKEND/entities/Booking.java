@@ -39,7 +39,7 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "booking_status")
-    private BookingStatus bookingStatus;
+    private BookingStatus bookingStatus = BookingStatus.PENDING;
 
     private String notes;
 
@@ -48,20 +48,19 @@ public class Booking {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private ServiceItem service;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
 
-    public Booking(String customerName, String customerEmail, String customerPhone, LocalDateTime startTime, LocalDateTime endTime, BookingStatus bookingStatus, String notes, Service service, User user) {
+    public Booking(String customerName, String customerEmail, String customerPhone, LocalDateTime startTime, LocalDateTime endTime, String notes, ServiceItem service, User user) {
         this.customerName = customerName;
         this.customerEmail = customerEmail;
         this.customerPhone = customerPhone;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.bookingStatus = bookingStatus;
         this.notes = notes;
         this.service = service;
         this.user = user;

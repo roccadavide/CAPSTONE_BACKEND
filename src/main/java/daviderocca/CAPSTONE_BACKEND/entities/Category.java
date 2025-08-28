@@ -31,7 +31,7 @@ public class Category {
     private List<Product> products;
 
     @OneToMany(mappedBy = "category")
-    private List<Service> services;
+    private List<ServiceItem> services;
 
     public Category(String categoryKey, String label) {
         this.categoryKey = categoryKey;

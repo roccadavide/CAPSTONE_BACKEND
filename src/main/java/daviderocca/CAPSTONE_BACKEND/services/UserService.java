@@ -4,7 +4,6 @@ import daviderocca.CAPSTONE_BACKEND.DTO.NewUserDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.UserResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.enums.Role;
-import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.DuplicateResourceException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedOperationException;
@@ -31,8 +30,8 @@ public class UserService {
     @Autowired
     private PasswordEncoder bcrypt;
 
-    public Page<User> findAll(int pageNumber, int pageSize, String sort) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.Direction.valueOf(sort));
+    public Page<User> findAllUsers(int pageNumber, int pageSize, String sort) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
         return this.userRepository.findAll(pageable);
     }
 
@@ -84,7 +83,7 @@ public class UserService {
         User modifiedUser = this.userRepository.save(found);
         log.info("User modificato correttamente");
         return new UserResponseDTO(modifiedUser.getUserId(), modifiedUser.getName(), modifiedUser.getSurname(), modifiedUser.getEmail(),
-                modifiedUser.getPhone(), modifiedUser.getRole());;
+                modifiedUser.getPhone(), modifiedUser.getRole());
     }
 
     @Transactional

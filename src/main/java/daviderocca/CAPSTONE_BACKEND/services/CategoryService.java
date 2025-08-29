@@ -7,6 +7,7 @@ import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
 import daviderocca.CAPSTONE_BACKEND.repositories.CategoryRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class CategoryService {
 
     @Autowired
@@ -45,6 +47,9 @@ public class CategoryService {
         Category newCategory = new Category(payload.categoryKey(), payload.label());
         Category savedCategory = categoryRepository.save(newCategory);
 
+        log.info("Categoria {} con chiave {} salvata con successo", savedCategory.getCategoryId(), savedCategory.getCategoryKey());
+
+
         return new CategoryResponseDTO(savedCategory.getCategoryId(), savedCategory.getCategoryKey(), savedCategory.getLabel());
     }
 
@@ -65,12 +70,15 @@ public class CategoryService {
 
         Category modifiedCategory = categoryRepository.save(found);
 
+        log.info("Categoria {} con chiave {} modificata con successo", modifiedCategory.getCategoryId(), modifiedCategory.getCategoryKey());
+
         return new CategoryResponseDTO(modifiedCategory.getCategoryId(), modifiedCategory.getCategoryKey(), modifiedCategory.getLabel());
     }
 
     public void findCategoryByIdAndDelete(UUID categoryId) {
         Category found = findCategoryById(categoryId);
         categoryRepository.delete(found);
+        log.info("Categoria {} con chiave {} eliminata con successo", found.getCategoryId(), found.getCategoryKey());
     }
 
 }

@@ -76,7 +76,7 @@ public class BookingService {
                 payload.endTime(), payload.notes(), relatedServiceItem, relatedUser);
 
         Booking savedNewBooking = this.bookingRepository.save(newBooking);
-        log.info("La prenotazione {} dell'utente con email {} è stata salvata correttamente!",
+        log.info("La prenotazione {} dell'utente con email {} è stata salvata!",
                 savedNewBooking.getBookingId(), relatedUser.getEmail());
 
         return new BookingResponseDTO(savedNewBooking.getBookingId(), savedNewBooking.getCustomerName(),
@@ -140,9 +140,11 @@ public class BookingService {
     }
 
 
+    @Transactional
     public void findBookingByIdAndDelete(UUID idBooking) {
         Booking found = findBookingById(idBooking);
         this.bookingRepository.delete(found);
+        log.info("La prenotazione {} è stata eliminata!", found.getBookingId());
     }
 
 }

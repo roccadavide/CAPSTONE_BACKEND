@@ -47,11 +47,11 @@ public class Order {
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 
-    public Order(User user, String customerPhone, String customerEmail, String customerName) {
-        this.user = user;
+    public Order(String customerPhone, String customerEmail, String customerName, User user) {
         this.customerPhone = customerPhone;
         this.customerEmail = customerEmail;
         this.customerName = customerName;
+        this.user = user;
     }
 
     @Override

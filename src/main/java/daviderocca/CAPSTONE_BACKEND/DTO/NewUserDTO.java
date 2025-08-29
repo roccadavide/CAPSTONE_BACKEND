@@ -11,12 +11,16 @@ public record NewUserDTO(
                          @Size(min = 2, max = 30, message = "Il nome deve avere tra 2 e 30 caratteri")
                          String name,
                          @NotEmpty(message = "Il cognome è obbligatorio")
-                         @Size(min = 2, max = 30, message = "Il cognome deve avere tra 2 e 30 caratteri") String surname,
+                         @Size(min = 2, max = 30, message = "Il cognome deve avere tra 2 e 30 caratteri")
+                         String surname,
                          @NotEmpty(message = "Email obbligatoria")
-                         @Email(message = "Email non valida") String email,
+                         @Email(message = "Email non valida")
+                         String email,
                          @NotEmpty(message = "Password obbligatoria")
-                         @Size(min = 6, message = "La password deve avere almeno 6 caratteri") String password,
+                         @Size(min = 6, message = "La password deve avere almeno 6 caratteri")
+                         String password,
                          @NotEmpty(message = "Il numero di telefono è obbligatorio")
-                         @Pattern(regexp = "\\+?[0-9]{7,15}", message = "Telefono non valido") String phone
+                         @Pattern(regexp = "\\+?[0-9]{7,15}", message = "Telefono non valido")
+                         String phone
 )
 {}

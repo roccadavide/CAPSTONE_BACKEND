@@ -47,7 +47,7 @@ public class CategoryService {
         Category newCategory = new Category(payload.categoryKey(), payload.label());
         Category savedCategory = categoryRepository.save(newCategory);
 
-        log.info("Categoria {} con chiave {} salvata con successo", savedCategory.getCategoryId(), savedCategory.getCategoryKey());
+        log.info("Categoria {} con chiave {} è stata salvata!", savedCategory.getCategoryId(), savedCategory.getCategoryKey());
 
 
         return new CategoryResponseDTO(savedCategory.getCategoryId(), savedCategory.getCategoryKey(), savedCategory.getLabel());
@@ -70,15 +70,16 @@ public class CategoryService {
 
         Category modifiedCategory = categoryRepository.save(found);
 
-        log.info("Categoria {} con chiave {} modificata con successo", modifiedCategory.getCategoryId(), modifiedCategory.getCategoryKey());
+        log.info("Categoria {} con chiave {} è stata modificata!", modifiedCategory.getCategoryId(), modifiedCategory.getCategoryKey());
 
         return new CategoryResponseDTO(modifiedCategory.getCategoryId(), modifiedCategory.getCategoryKey(), modifiedCategory.getLabel());
     }
 
+    @Transactional
     public void findCategoryByIdAndDelete(UUID categoryId) {
         Category found = findCategoryById(categoryId);
         categoryRepository.delete(found);
-        log.info("Categoria {} con chiave {} eliminata con successo", found.getCategoryId(), found.getCategoryKey());
+        log.info("Categoria {} con chiave {} è stata eliminata!", found.getCategoryId(), found.getCategoryKey());
     }
 
 }

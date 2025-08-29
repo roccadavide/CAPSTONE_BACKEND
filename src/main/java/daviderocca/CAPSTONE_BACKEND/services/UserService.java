@@ -108,6 +108,7 @@ public class UserService {
         return userRepository.save(found);
     }
 
+    @Transactional
     public void findUserByIdAndDelete(UUID idUser) {
         User found = findUserById(idUser);
         this.userRepository.delete(found);

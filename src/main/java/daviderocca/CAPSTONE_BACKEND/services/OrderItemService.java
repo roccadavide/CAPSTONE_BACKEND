@@ -74,10 +74,11 @@ public class OrderItemService {
                 modifiedOrderItem.getPrice(), relatedProduct.getProductId(), relatedOrder.getOrderId());
     }
 
+    @Transactional
     public void findOrderItemByIdAndDelete(UUID orderItemId) {
         OrderItem found = findOrderItemById(orderItemId);
         orderItemRepository.delete(found);
-        log.info("OrderItem {} eliminato correttamente!", found.getOrderItemId());
+        log.info("OrderItem {} è stato eliminato!", found.getOrderItemId());
     }
 
 }

@@ -39,8 +39,8 @@ public class BookingService {
         return this.bookingRepository.findAll(pageable);
     }
 
-    public Booking findBookingById(UUID userId) {
-        return this.bookingRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException(userId));
+    public Booking findBookingById(UUID bookingId) {
+        return this.bookingRepository.findById(bookingId).orElseThrow(()-> new ResourceNotFoundException(bookingId));
     }
 
     public Booking findBookingByEmail(String customerEmail) {

@@ -8,4 +8,9 @@ import java.util.UUID;
 
 @Repository
 public interface ServiceItemRepository extends JpaRepository<ServiceItem, UUID> {
+
+    boolean existsByTitle(String title);
+
+    boolean existsByTitleAndServiceIdNot(String title, UUID serviceItemId);
+
 }

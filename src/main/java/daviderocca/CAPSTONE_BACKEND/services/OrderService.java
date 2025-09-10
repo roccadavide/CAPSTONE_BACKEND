@@ -31,13 +31,57 @@ public class OrderService {
     @Autowired
     private UserService userService;
 
-    public Page<Order> findAllOrders(int pageNumber, int pageSize, String sort) {
+    public Page<OrderResponseDTO> findAllOrders(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.orderRepository.findAll(pageable);
+        Page<Order> page = this.orderRepository.findAll(pageable);
+
+        return page.map(order -> {
+            List<OrderItemResponseDTO> orderItemDTOs = order.getOrderItems().stream()
+                    .map(item -> new OrderItemResponseDTO(
+                            item.getOrderItemId(),
+                            item.getQuantity(),
+                            item.getPrice(),
+                            item.getProduct().getProductId(),
+                            item.getOrder().getOrderId()
+                    ))
+                    .toList();
+
+            return new OrderResponseDTO(
+                    order.getOrderId(),
+                    order.getCustomerName(),
+                    order.getCustomerEmail(),
+                    order.getCustomerPhone(),
+                    order.getOrderStatus(),
+                    order.getCreatedAt(),
+                    order.getUser() != null ? order.getUser().getUserId() : null,
+                    orderItemDTOs
+            );
+        });
     }
 
     public Order findOrderById(UUID orderId) {
-        return this.orderRepository.findById(orderId).orElseThrow(()-> new ResourceNotFoundException(orderId));
+        return this.orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(orderId));
+    }
+
+    public OrderResponseDTO findOrderByIdAndConvert(UUID orderId) {
+        Order found = this.orderRepository.findById(orderId).orElseThrow(()-> new ResourceNotFoundException(orderId));
+
+        List<OrderItemResponseDTO> orderItemDTOs = found.getOrderItems().stream()
+                .map(item -> new OrderItemResponseDTO(
+                        item.getOrderItemId(),
+                        item.getQuantity(),
+                        item.getPrice(),
+                        item.getProduct().getProductId(),
+                        item.getOrder().getOrderId()
+                ))
+                .toList();
+
+        return new OrderResponseDTO(found.getOrderId(), found.getCustomerName(),
+                found.getCustomerEmail(), found.getCustomerPhone(), found.getOrderStatus(),
+                found.getCreatedAt(), found.getUser() != null ? found.getUser().getUserId() : null,
+                orderItemDTOs);
+
     }
 
     public OrderResponseDTO saveOrder(NewOrderDTO payload) {
@@ -108,6 +152,34 @@ public class OrderService {
         return new OrderResponseDTO(modifiedOrder.getOrderId(), modifiedOrder.getCustomerName(),
                 modifiedOrder.getCustomerEmail(), modifiedOrder.getCustomerPhone(), modifiedOrder.getOrderStatus(),
                 modifiedOrder.getCreatedAt(), relatedUser != null ? relatedUser.getUserId() : null, orderItemDTOs);
+    }
+
+    @Transactional
+    public OrderResponseDTO updateOrderStatus(UUID orderId, OrderStatus newStatus) {
+        Order found = findOrderById(orderId);
+
+        if (found.getOrderStatus().equals(OrderStatus.CANCELED) || found.getOrderStatus().equals(OrderStatus.COMPLETED)) {
+            throw new BadRequestException("Non puoi aggiornare lo stato di un ordine " + found.getOrderStatus());
+        }
+
+        found.setOrderStatus(newStatus);
+        Order updatedOrder = orderRepository.save(found);
+
+        List<OrderItemResponseDTO> orderItemDTOs = updatedOrder.getOrderItems().stream()
+                .map(item -> new OrderItemResponseDTO(
+                        item.getOrderItemId(),
+                        item.getQuantity(),
+                        item.getPrice(),
+                        item.getProduct().getProductId(),
+                        item.getOrder().getOrderId()
+                ))
+                .toList();
+
+        log.info("Stato ordine {} aggiornato a {}", updatedOrder.getOrderId(), updatedOrder.getOrderStatus());
+        return new OrderResponseDTO(updatedOrder.getOrderId(), updatedOrder.getCustomerName(),
+                updatedOrder.getCustomerEmail(), updatedOrder.getCustomerPhone(), updatedOrder.getOrderStatus(),
+                updatedOrder.getCreatedAt(), updatedOrder.getUser() != null ? updatedOrder.getUser().getUserId() : null,
+                orderItemDTOs);
     }
 
     @Transactional

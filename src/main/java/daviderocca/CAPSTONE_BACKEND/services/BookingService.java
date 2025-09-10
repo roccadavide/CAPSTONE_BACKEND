@@ -5,6 +5,7 @@ import daviderocca.CAPSTONE_BACKEND.DTO.NewBookingDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.Booking;
 import daviderocca.CAPSTONE_BACKEND.entities.ServiceItem;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
+import daviderocca.CAPSTONE_BACKEND.enums.BookingStatus;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.DuplicateResourceException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
@@ -34,17 +35,66 @@ public class BookingService {
     @Autowired
     private UserService userService;
 
-    public Page<Booking> findAllBookings(int pageNumber, int pageSize, String sort) {
+    public Page<BookingResponseDTO> findAllBookings(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.bookingRepository.findAll(pageable);
+        Page<Booking> page = this.bookingRepository.findAll(pageable);
+
+        return page.map(booking -> new BookingResponseDTO(
+                booking.getBookingId(),
+                booking.getCustomerName(),
+                booking.getCustomerEmail(),
+                booking.getCustomerPhone(),
+                booking.getStartTime(),
+                booking.getEndTime(),
+                booking.getBookingStatus(),
+                booking.getNotes(),
+                booking.getCreatedAt(),
+                booking.getService() != null ? booking.getService().getServiceId() : null,
+                booking.getUser() != null ? booking.getUser().getUserId() : null
+        ));
     }
+
+
 
     public Booking findBookingById(UUID bookingId) {
         return this.bookingRepository.findById(bookingId).orElseThrow(()-> new ResourceNotFoundException(bookingId));
     }
 
-    public Booking findBookingByEmail(String customerEmail) {
-        return this.bookingRepository.findByCustomerEmail(customerEmail).orElseThrow(()-> new ResourceNotFoundException(customerEmail));
+    public BookingResponseDTO findBookingByIdAndConvert(UUID bookingId) {
+        Booking found = this.bookingRepository.findById(bookingId).orElseThrow(()-> new ResourceNotFoundException(bookingId));
+
+        return new BookingResponseDTO(
+                found.getBookingId(),
+                found.getCustomerName(),
+                found.getCustomerEmail(),
+                found.getCustomerPhone(),
+                found.getStartTime(),
+                found.getEndTime(),
+                found.getBookingStatus(),
+                found.getNotes(),
+                found.getCreatedAt(),
+                found.getService() != null ? found.getService().getServiceId() : null,
+                found.getUser() != null ? found.getUser().getUserId() : null
+        );
+    }
+
+
+    public BookingResponseDTO findBookingByEmailAndConvert(String customerEmail) {
+        Booking found = this.bookingRepository.findByCustomerEmail(customerEmail).orElseThrow(()-> new ResourceNotFoundException(customerEmail));
+
+        return new BookingResponseDTO(
+                found.getBookingId(),
+                found.getCustomerName(),
+                found.getCustomerEmail(),
+                found.getCustomerPhone(),
+                found.getStartTime(),
+                found.getEndTime(),
+                found.getBookingStatus(),
+                found.getNotes(),
+                found.getCreatedAt(),
+                found.getService() != null ? found.getService().getServiceId() : null,
+                found.getUser() != null ? found.getUser().getUserId() : null
+        );
     }
 
     public BookingResponseDTO saveBooking(NewBookingDTO payload) {
@@ -99,7 +149,7 @@ public class BookingService {
         }
 
         bookingRepository.findAll().forEach(existing -> {
-            if (!existing.getBookingId().equals(idBooking) && // escludo se stesso
+            if (!existing.getBookingId().equals(idBooking) &&
                     existing.getService().getServiceId().equals(payload.serviceId()) &&
                     existing.getStartTime().isBefore(payload.endTime()) &&
                     existing.getEndTime().isAfter(payload.startTime())) {
@@ -129,14 +179,42 @@ public class BookingService {
         found.setService(relatedServiceItem);
         found.setUser(relatedUser);
 
-        Booking modifiedBooking = this.bookingRepository.save(found);
+        Booking updatedBooking = this.bookingRepository.save(found);
 
-        log.info("La prenotazione {} è stata aggiornata!", modifiedBooking.getBookingId());
+        log.info("La prenotazione {} è stata aggiornata!", updatedBooking.getBookingId());
 
-        return new BookingResponseDTO(modifiedBooking.getBookingId(), modifiedBooking.getCustomerName(),
-                modifiedBooking.getCustomerEmail(), modifiedBooking.getCustomerPhone(), modifiedBooking.getStartTime(),
-                modifiedBooking.getEndTime(), modifiedBooking.getBookingStatus(), modifiedBooking.getNotes(),
-                modifiedBooking.getCreatedAt(), payload.serviceId(), payload.userId());
+        return new BookingResponseDTO(updatedBooking.getBookingId(), updatedBooking.getCustomerName(),
+                updatedBooking.getCustomerEmail(), updatedBooking.getCustomerPhone(), updatedBooking.getStartTime(),
+                updatedBooking.getEndTime(), updatedBooking.getBookingStatus(), updatedBooking.getNotes(),
+                updatedBooking.getCreatedAt(), payload.serviceId(), payload.userId());
+    }
+
+    @Transactional
+    public BookingResponseDTO updateBookingStatus(UUID bookingId, BookingStatus newStatus) {
+        Booking found = findBookingById(bookingId);
+
+        if (found.getBookingStatus().equals(BookingStatus.CANCELLED) || found.getBookingStatus().equals(BookingStatus.COMPLETE)) {
+            throw new BadRequestException("Non puoi aggiornare lo stato di una prenotazione " + found.getBookingStatus());
+        }
+
+        found.setBookingStatus(newStatus);
+        Booking updatedBooking = bookingRepository.save(found);
+
+        log.info("Stato prenotazione {} aggiornato a {}", updatedBooking.getBookingId(), updatedBooking.getBookingStatus());
+
+        return new BookingResponseDTO(
+                updatedBooking.getBookingId(),
+                updatedBooking.getCustomerName(),
+                updatedBooking.getCustomerEmail(),
+                updatedBooking.getCustomerPhone(),
+                updatedBooking.getStartTime(),
+                updatedBooking.getEndTime(),
+                updatedBooking.getBookingStatus(),
+                updatedBooking.getNotes(),
+                updatedBooking.getCreatedAt(),
+                updatedBooking.getService() != null ? updatedBooking.getService().getServiceId() : null,
+                updatedBooking.getUser() != null ? updatedBooking.getUser().getUserId() : null
+        );
     }
 
 

@@ -24,13 +24,27 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public Page<Category> findAllCategories(int pageNumber, int pageSize, String sort) {
+    public Page<CategoryResponseDTO> findAllCategories(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.categoryRepository.findAll(pageable);
+        Page<Category> page = this.categoryRepository.findAll(pageable);
+
+        return page.map(categoty -> new CategoryResponseDTO(
+                categoty.getCategoryId(),
+                categoty.getCategoryKey(),
+                categoty.getLabel()));
     }
 
     public Category findCategoryById(UUID categoryId) {
         return this.categoryRepository.findById(categoryId).orElseThrow(()-> new ResourceNotFoundException(categoryId));
+    }
+
+    public CategoryResponseDTO findCategoryByIdAndConvert(UUID categoryId) {
+        Category found = this.categoryRepository.findById(categoryId).orElseThrow(()-> new ResourceNotFoundException(categoryId));
+
+        return new CategoryResponseDTO(
+                found.getCategoryId(),
+                found.getCategoryKey(),
+                found.getLabel());
     }
 
 

@@ -30,15 +30,34 @@ public class OrderItemService {
     @Autowired
     private OrderService orderService;
 
-    public Page<OrderItem> findAllOrderItems(int pageNumber, int pageSize, String sort) {
+    public Page<OrderItemResponseDTO> findAllOrderItems(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.orderItemRepository.findAll(pageable);
+        Page<OrderItem> page = this.orderItemRepository.findAll(pageable);
+
+        return page.map(orderItem -> new OrderItemResponseDTO(
+                orderItem.getOrderItemId(),
+                orderItem.getQuantity(),
+                orderItem.getPrice(),
+                orderItem.getProduct() != null ? orderItem.getProduct().getProductId() : null,
+                orderItem.getOrder() != null ? orderItem.getOrder().getOrderId() : null
+        ));
     }
 
     public OrderItem findOrderItemById(UUID orderItemId) {
         return this.orderItemRepository.findById(orderItemId).orElseThrow(()-> new ResourceNotFoundException(orderItemId));
     }
 
+    public OrderItemResponseDTO findOrderItemByIdAndConvert(UUID orderItemId) {
+        OrderItem found = this.orderItemRepository.findById(orderItemId).orElseThrow(()-> new ResourceNotFoundException(orderItemId));
+
+        return new OrderItemResponseDTO(
+                found.getOrderItemId(),
+                found.getQuantity(),
+                found.getPrice(),
+                found.getProduct() != null ? found.getProduct().getProductId() : null,
+                found.getOrder() != null ? found.getOrder().getOrderId() : null
+        );
+    }
 
     public OrderItemResponseDTO saveOrderItem(NewOrderItemDTO payload) {
 

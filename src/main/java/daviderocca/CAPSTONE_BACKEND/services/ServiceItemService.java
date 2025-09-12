@@ -29,13 +29,37 @@ public class ServiceItemService {
     private CategoryService categoryService;
 
 
-    public Page<ServiceItem> findAllServiceItems(int pageNumber, int pageSize, String sort) {
+    public Page<ServiceItemResponseDTO> findAllServiceItems(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.serviceItemRepository.findAll(pageable);
+        Page<ServiceItem> page = this.serviceItemRepository.findAll(pageable);
+
+        return page.map(serviceItem -> new ServiceItemResponseDTO(
+                serviceItem.getServiceId(),
+                serviceItem.getTitle(),
+                serviceItem.getDurationMin(),
+                serviceItem.getPrice(),
+                serviceItem.getShortDescription(),
+                serviceItem.getDescription(),
+                serviceItem.getImages(),
+                serviceItem.getCategory() != null ? serviceItem.getCategory().getCategoryId() : null));
     }
 
     public ServiceItem findServiceItemById(UUID serviceItemId) {
         return this.serviceItemRepository.findById(serviceItemId).orElseThrow(()-> new ResourceNotFoundException(serviceItemId));
+    }
+
+    public ServiceItemResponseDTO findServiceItemByIdAndConvert(UUID serviceItemId) {
+        ServiceItem found = this.serviceItemRepository.findById(serviceItemId).orElseThrow(()-> new ResourceNotFoundException(serviceItemId));
+
+        return new ServiceItemResponseDTO(
+                found.getServiceId(),
+                found.getTitle(),
+                found.getDurationMin(),
+                found.getPrice(),
+                found.getShortDescription(),
+                found.getDescription(),
+                found.getImages(),
+                found.getCategory() != null ? found.getCategory().getCategoryId() : null);
     }
 
     public ServiceItemResponseDTO saveServiceItem(NewServiceItemDTO payload) {

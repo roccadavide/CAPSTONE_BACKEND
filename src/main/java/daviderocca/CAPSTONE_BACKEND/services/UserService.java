@@ -30,17 +30,45 @@ public class UserService {
     @Autowired
     private PasswordEncoder bcrypt;
 
-    public Page<User> findAllUsers(int pageNumber, int pageSize, String sort) {
+    public Page<UserResponseDTO> findAllUsers(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.userRepository.findAll(pageable);
+        Page<User> page = this.userRepository.findAll(pageable);
+
+        return page.map(user -> new UserResponseDTO(
+                user.getUserId(),
+                user.getName(),
+                user.getSurname(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole()));
     }
 
     public User findUserById(UUID userId) {
         return this.userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException(userId));
     }
 
-    public User findByUserByEmail(String email) {
-        return this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
+    public UserResponseDTO findUserByIdAndConvert(UUID userId) {
+        User found = this.userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException(userId));
+
+        return new UserResponseDTO(
+                found.getUserId(),
+                found.getName(),
+                found.getSurname(),
+                found.getEmail(),
+                found.getPhone(),
+                found.getRole());
+    }
+
+    public UserResponseDTO findByUserByEmailAndConvert(String email) {
+        User found = this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
+
+        return new UserResponseDTO(
+                found.getUserId(),
+                found.getName(),
+                found.getSurname(),
+                found.getEmail(),
+                found.getPhone(),
+                found.getRole());
     }
 
     public UserResponseDTO saveUser(NewUserDTO payload) {
@@ -87,25 +115,31 @@ public class UserService {
     }
 
     @Transactional
-    public User findUserByIdAndPatchToAdmin (UUID idUser) {
+    public UserResponseDTO findUserByIdAndPatchToAdmin (UUID idUser) {
         User found = findUserById(idUser);
 
         if(found.getRole().equals(Role.ADMIN)) throw new UnauthorizedOperationException("L'Utente è gia ADMIN!");
 
         found.setRole(Role.ADMIN);
 
-        return userRepository.save(found);
+        User modifiedUser = userRepository.save(found);
+
+        return new UserResponseDTO(modifiedUser.getUserId(), modifiedUser.getName(), modifiedUser.getSurname(), modifiedUser.getEmail(),
+                modifiedUser.getPhone(), modifiedUser.getRole());
     }
 
     @Transactional
-    public User findUserByIdAndRemoveFromAdmin (UUID idUser) {
+    public UserResponseDTO findUserByIdAndRemoveFromAdmin (UUID idUser) {
         User found = findUserById(idUser);
 
         if(found.getRole().equals(Role.COSTUMER)) throw new UnauthorizedOperationException("L'Utente è gia COSTUMER!");
 
         found.setRole(Role.COSTUMER);
 
-        return userRepository.save(found);
+        User modifiedUser = userRepository.save(found);
+
+        return new UserResponseDTO(modifiedUser.getUserId(), modifiedUser.getName(), modifiedUser.getSurname(), modifiedUser.getEmail(),
+                modifiedUser.getPhone(), modifiedUser.getRole());
     }
 
     @Transactional

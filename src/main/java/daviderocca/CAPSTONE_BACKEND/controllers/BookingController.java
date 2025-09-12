@@ -77,11 +77,22 @@ public class BookingController {
     @PreAuthorize("hasRole('ADMIN')")
     public BookingResponseDTO updateBooking(
             @PathVariable UUID bookingId,
-            @Validated @RequestBody NewBookingDTO payload
+            @Validated @RequestBody NewBookingDTO payload,
+            BindingResult bindingResult
     ) {
+
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException(bindingResult.getAllErrors().stream()
+                    .map(e -> e.getDefaultMessage())
+                    .collect(Collectors.joining(", ")));
+        }
+
         log.info("Richiesta aggiornamento prenotazione {}", bookingId);
         return bookingService.findBookingByIdAndUpdate(bookingId, payload);
     }
+
+    // ---------------------------------- PATCH ----------------------------------
+
 
     @PatchMapping("/{bookingId}/status")
     @ResponseStatus(HttpStatus.OK)

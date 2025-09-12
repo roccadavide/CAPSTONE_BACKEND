@@ -28,13 +28,37 @@ public class ProductService {
     @Autowired
     private CategoryService categoryService;
 
-    public Page<Product> findAllProducts(int pageNumber, int pageSize, String sort) {
+    public Page<ProductResponseDTO> findAllProducts(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
-        return this.productRepository.findAll(pageable);
+        Page<Product> page = this.productRepository.findAll(pageable);
+
+        return page.map(product -> new ProductResponseDTO(
+                product.getProductId(),
+                product.getName(),
+                product.getPrice(),
+                product.getDescription(),
+                product.getImages(),
+                product.getStock(),
+                product.getCategory() != null ? product.getCategory().getCategoryId() : null
+        ));
     }
 
     public Product findProductById(UUID productId) {
         return this.productRepository.findById(productId).orElseThrow(()-> new ResourceNotFoundException(productId));
+    }
+
+    public ProductResponseDTO findProductByIdAndConvert(UUID productId) {
+        Product found = this.productRepository.findById(productId).orElseThrow(()-> new ResourceNotFoundException(productId));
+
+        return new ProductResponseDTO(
+                found.getProductId(),
+                found.getName(),
+                found.getPrice(),
+                found.getDescription(),
+                found.getImages(),
+                found.getStock(),
+                found.getCategory() != null ? found.getCategory().getCategoryId() : null
+        );
     }
 
     public ProductResponseDTO saveProduct(NewProductDTO payload) {

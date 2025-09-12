@@ -2,7 +2,6 @@ package daviderocca.CAPSTONE_BACKEND.controllers;
 
 import daviderocca.CAPSTONE_BACKEND.DTO.NewUserDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.UserResponseDTO;
-import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.services.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Page<User> getAllUsers(
+    public Page<UserResponseDTO> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sort
@@ -39,16 +38,16 @@ public class UserController {
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
-    public User getUserById(@PathVariable UUID userId) {
+    public UserResponseDTO getUserById(@PathVariable UUID userId) {
         log.info("Richiesta dettaglio utente {}", userId);
-        return userService.findUserById(userId);
+        return userService.findUserByIdAndConvert(userId);
     }
 
     @GetMapping("/email/{email}")
     @ResponseStatus(HttpStatus.OK)
-    public User getUserByEmail(@PathVariable String email) {
+    public UserResponseDTO getUserByEmail(@PathVariable String email) {
         log.info("Richiesta utente per email {}", email);
-        return userService.findByUserByEmail(email);
+        return userService.findByUserByEmailAndConvert(email);
     }
 
     // ---------------------------------- POST ----------------------------------
@@ -73,8 +72,16 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserResponseDTO updateUser(
             @PathVariable UUID userId,
-            @Validated @RequestBody NewUserDTO payload
+            @Validated @RequestBody NewUserDTO payload,
+            BindingResult bindingResult
     ) {
+
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException(bindingResult.getAllErrors().stream()
+                    .map(e -> e.getDefaultMessage())
+                    .collect(Collectors.joining(", ")));
+        }
+
         log.info("Richiesta aggiornamento utente {}", userId);
         return userService.findUserByIdAndUpdate(userId, payload);
     }
@@ -83,14 +90,14 @@ public class UserController {
 
     @PatchMapping("/{userId}/make-admin")
     @ResponseStatus(HttpStatus.OK)
-    public User promoteToAdmin(@PathVariable UUID userId) {
+    public UserResponseDTO promoteToAdmin(@PathVariable UUID userId) {
         log.info("Richiesta promozione utente {} a ADMIN", userId);
         return userService.findUserByIdAndPatchToAdmin(userId);
     }
 
     @PatchMapping("/{userId}/remove-admin")
     @ResponseStatus(HttpStatus.OK)
-    public User removeAdminRole(@PathVariable UUID userId) {
+    public UserResponseDTO removeAdminRole(@PathVariable UUID userId) {
         log.info("Richiesta rimozione ruolo ADMIN per utente {}", userId);
         return userService.findUserByIdAndRemoveFromAdmin(userId);
     }

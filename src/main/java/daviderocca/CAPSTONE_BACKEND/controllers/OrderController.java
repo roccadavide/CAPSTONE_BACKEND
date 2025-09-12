@@ -70,8 +70,16 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public OrderResponseDTO updateOrder(
             @PathVariable UUID orderId,
-            @Validated @RequestBody NewOrderDTO payload
+            @Validated @RequestBody NewOrderDTO payload,
+            BindingResult bindingResult
     ) {
+
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException(bindingResult.getAllErrors().stream()
+                    .map(e -> e.getDefaultMessage())
+                    .collect(Collectors.joining(", ")));
+        }
+
         log.info("Richiesta aggiornamento ordine {}", orderId);
         return orderService.findOrderByIdAndUpdate(orderId, payload);
     }

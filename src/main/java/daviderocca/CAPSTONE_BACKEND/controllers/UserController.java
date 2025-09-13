@@ -7,6 +7,7 @@ import daviderocca.CAPSTONE_BACKEND.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<UserResponseDTO> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -90,6 +92,7 @@ public class UserController {
 
     @PatchMapping("/{userId}/make-admin")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponseDTO promoteToAdmin(@PathVariable UUID userId) {
         log.info("Richiesta promozione utente {} a ADMIN", userId);
         return userService.findUserByIdAndPatchToAdmin(userId);
@@ -97,6 +100,7 @@ public class UserController {
 
     @PatchMapping("/{userId}/remove-admin")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponseDTO removeAdminRole(@PathVariable UUID userId) {
         log.info("Richiesta rimozione ruolo ADMIN per utente {}", userId);
         return userService.findUserByIdAndRemoveFromAdmin(userId);

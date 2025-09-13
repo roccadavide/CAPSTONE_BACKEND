@@ -59,6 +59,10 @@ public class UserService {
                 found.getRole());
     }
 
+    public User findUserByEmail(String email) {
+        return this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
+    }
+
     public UserResponseDTO findByUserByEmailAndConvert(String email) {
         User found = this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
 

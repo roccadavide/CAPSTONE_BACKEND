@@ -2,12 +2,15 @@ package daviderocca.CAPSTONE_BACKEND.controllers;
 
 import daviderocca.CAPSTONE_BACKEND.DTO.NewUserDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.UserResponseDTO;
+import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.services.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +53,13 @@ public class UserController {
     public UserResponseDTO getUserByEmail(@PathVariable String email) {
         log.info("Richiesta utente per email {}", email);
         return userService.findByUserByEmailAndConvert(email);
+    }
+
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponseDTO getCurrentUser(@AuthenticationPrincipal User currentUser) {
+        log.info("Richiesta profilo utente autenticato: {}", currentUser.getUserId());
+        return userService.findUserByIdAndConvert(currentUser.getUserId());
     }
 
     // ---------------------------------- POST ----------------------------------

@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @Slf4j
 public class OrderController {
 

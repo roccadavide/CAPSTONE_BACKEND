@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -34,7 +35,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        if (path.equals("/api/users") || path.equals("/api/users/register") || path.equals("/noAuth/login")) {
+        if (path.equals("/users") || path.equals("/users/register") || path.equals("/categories") || path.equals("/serviceItems")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -43,24 +44,31 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer "))
-            throw new UnauthorizedException("Inserire il token nell'Authorization Header nel formato corretto!");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Inserire il token nell'Authorization Header nel formato corretto!");
+            return;
+        }
 
         String accessToken = authHeader.replace("Bearer ", "");
 
         jwtTools.verifyToken(accessToken);
 
         // ****************************************** AUTORIZZAZIONE *******************************************************
-
         String email = jwtTools.extractSubject(accessToken);
 
         User activeUser = this.userService.findUserByEmail(email);
 
         if (activeUser == null) {
-            throw new UnauthorizedException("Utente non trovato!");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Utente non trovato!");
+            return;
         }
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(activeUser, null, activeUser.getAuthorities());
+        // Spring Security userà le authorities dell’utente
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                activeUser,
+                null,
+                activeUser.getAuthorities()
+        );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 

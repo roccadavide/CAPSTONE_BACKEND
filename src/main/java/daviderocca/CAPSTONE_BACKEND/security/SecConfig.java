@@ -28,8 +28,10 @@ public class SecConfig {
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/users",
-                                "/noAuth/login"
+                                "/users",
+                                "/noAuth/login",
+                                    "/serviceItems",
+                                "/categories"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

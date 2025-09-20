@@ -22,7 +22,6 @@ public record NewServiceItemDTO(
                                 String shortDescription,
                                 @NotEmpty(message = "La descrizione non può essere vuota")
                                 String description,
-                                List<String> images,
                                 @NotNull(message = "La categoria è obbligatoria")
                                 UUID categoryId
 ) {}

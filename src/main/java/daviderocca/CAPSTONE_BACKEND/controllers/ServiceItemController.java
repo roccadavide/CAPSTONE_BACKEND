@@ -12,12 +12,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/serviceItems")
+@RequestMapping("/serviceItems")
 @Slf4j
 public class ServiceItemController {
 
@@ -30,7 +31,7 @@ public class ServiceItemController {
     @ResponseStatus(HttpStatus.OK)
     public Page<ServiceItemResponseDTO> getAllServiceItems(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "40") int size,
             @RequestParam(defaultValue = "title") String sort
     ) {
         log.info("Richiesta elenco servizi - pagina: {}, size: {}, sort: {}", page, size, sort);
@@ -46,10 +47,13 @@ public class ServiceItemController {
 
     // ---------------------------------- POST ----------------------------------
 
-    @PostMapping
+    @PostMapping("/postService")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public ServiceItemResponseDTO createServiceItem(@Validated @RequestBody NewServiceItemDTO payload, BindingResult bindingResult) {
+    public ServiceItemResponseDTO createServiceItem(
+            @RequestPart("data") @Validated NewServiceItemDTO payload,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             throw new BadRequestException(bindingResult.getAllErrors().stream()
@@ -58,7 +62,7 @@ public class ServiceItemController {
         }
 
         log.info("Richiesta creazione servizio {}", payload.title());
-        return serviceItemService.saveServiceItem(payload);
+        return serviceItemService.saveServiceItem(payload, image);
     }
 
     // ---------------------------------- PUT ----------------------------------

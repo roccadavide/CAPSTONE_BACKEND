@@ -72,7 +72,8 @@ public class ServiceItemController {
     @PreAuthorize("hasRole('ADMIN')")
     public ServiceItemResponseDTO updateServiceItem(
             @PathVariable UUID serviceItemId,
-            @Validated @RequestBody NewServiceItemDTO payload,
+            @RequestPart("data") @Validated NewServiceItemDTO payload,
+            @RequestPart(value = "image", required = false) MultipartFile image,
             BindingResult bindingResult
     ) {
 
@@ -83,7 +84,7 @@ public class ServiceItemController {
         }
 
         log.info("Richiesta aggiornamento servizio {}", serviceItemId);
-        return serviceItemService.findServiceItemByIdAndUpdate(serviceItemId, payload);
+        return serviceItemService.findServiceItemByIdAndUpdate(serviceItemId, payload, image);
     }
 
     // ---------------------------------- DELETE ----------------------------------

@@ -31,7 +31,8 @@ public class SecConfig {
                                 "/users",
                                 "/noAuth/login",
                                     "/serviceItems",
-                                "/categories"
+                                "/categories",
+                                "/products"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

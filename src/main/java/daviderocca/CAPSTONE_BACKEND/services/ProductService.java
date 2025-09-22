@@ -1,5 +1,7 @@
 package daviderocca.CAPSTONE_BACKEND.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import daviderocca.CAPSTONE_BACKEND.DTO.NewProductDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.ProductResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.Category;
@@ -15,7 +17,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,6 +33,9 @@ public class ProductService {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private Cloudinary imageUploader;
 
     public Page<ProductResponseDTO> findAllProducts(int pageNumber, int pageSize, String sort) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sort));
@@ -61,7 +70,7 @@ public class ProductService {
         );
     }
 
-    public ProductResponseDTO saveProduct(NewProductDTO payload) {
+    public ProductResponseDTO saveProduct(NewProductDTO payload, MultipartFile image) {
 
         if (productRepository.existsByName(payload.name())) {
             throw new IllegalArgumentException("Esiste già un prodotto con questo nome!");
@@ -69,7 +78,19 @@ public class ProductService {
 
         Category relatedCategory = categoryService.findCategoryById(payload.categoryId());
 
-        Product newProduct = new Product(payload.name(), payload.price(), payload.description(), payload.images(), payload.stock(), relatedCategory);
+        List<String> images = new ArrayList<>();
+        if (image != null && !image.isEmpty()) {
+            try {
+                String url = (String) imageUploader.uploader()
+                        .upload(image.getBytes(), ObjectUtils.emptyMap())
+                        .get("url");
+                images.add(url);
+            } catch (IOException e) {
+                throw new BadRequestException("Errore durante l'upload dell'immagine");
+            }
+        }
+
+        Product newProduct = new Product(payload.name(), payload.price(), payload.description(), images, payload.stock(), relatedCategory);
         Product savedProduct = productRepository.save(newProduct);
 
 
@@ -82,19 +103,31 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponseDTO findProductByIdAndUpdate(UUID productId, NewProductDTO payload) {
+    public ProductResponseDTO findProductByIdAndUpdate(UUID productId, NewProductDTO payload, MultipartFile image) {
         Product found = findProductById(productId);
 
-        if (productRepository.existsByName(payload.name())) {
+        if (productRepository.existsByNameAndProductIdNot(payload.name(), productId)) {
             throw new IllegalArgumentException("Esiste già un prodotto con questo nome!");
         }
 
         Category relatedCategory = categoryService.findCategoryById(payload.categoryId());
 
+        List<String> images = new ArrayList<>();
+        if (image != null && !image.isEmpty()) {
+            try {
+                String url = (String) imageUploader.uploader()
+                        .upload(image.getBytes(), ObjectUtils.emptyMap())
+                        .get("url");
+                images.add(url);
+            } catch (IOException e) {
+                throw new BadRequestException("Errore durante l'upload dell'immagine");
+            }
+        }
+
         found.setName(payload.name());
         found.setPrice(payload.price());
         found.setDescription(payload.description());
-        found.setImages(payload.images());
+        found.setImages(images);
         found.setStock(payload.stock());
         found.setCategory(relatedCategory);
 

@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,7 +27,6 @@ public class ProductController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('ADMIN')")
     public Page<ProductResponseDTO> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -45,10 +45,12 @@ public class ProductController {
 
     // ---------------------------------- POST ----------------------------------
 
-    @PostMapping
+    @PostMapping("/postProduct")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public ProductResponseDTO createProduct(@Validated @RequestBody NewProductDTO payload, BindingResult bindingResult) {
+    public ProductResponseDTO createProduct(@Validated @RequestPart(value = "data") NewProductDTO payload,
+                                            @RequestPart(value = "image", required = false) MultipartFile image,
+                                            BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             throw new BadRequestException(bindingResult.getAllErrors().stream()
@@ -57,7 +59,7 @@ public class ProductController {
         }
 
         log.info("Richiesta creazione prodotto {}", payload.name());
-        return productService.saveProduct(payload);
+        return productService.saveProduct(payload, image);
     }
 
     // ---------------------------------- PUT ----------------------------------
@@ -67,7 +69,8 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ProductResponseDTO updateProduct(
             @PathVariable UUID productId,
-            @Validated @RequestBody NewProductDTO payload,
+            @Validated @RequestPart(value = "data") NewProductDTO payload,
+            @RequestPart(value = "image", required = false) MultipartFile image,
             BindingResult bindingResult
     ) {
 
@@ -78,7 +81,7 @@ public class ProductController {
         }
 
         log.info("Richiesta aggiornamento prodotto {}", productId);
-        return productService.findProductByIdAndUpdate(productId, payload);
+        return productService.findProductByIdAndUpdate(productId, payload, image);
     }
 
     // ---------------------------------- DELETE ----------------------------------

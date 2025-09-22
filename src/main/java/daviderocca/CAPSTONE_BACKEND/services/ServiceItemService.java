@@ -118,7 +118,7 @@ public class ServiceItemService {
     }
 
     @Transactional
-    public ServiceItemResponseDTO findServiceItemByIdAndUpdate(UUID serviceItemId, NewServiceItemDTO payload) {
+    public ServiceItemResponseDTO findServiceItemByIdAndUpdate(UUID serviceItemId, NewServiceItemDTO payload, MultipartFile image) {
         ServiceItem found = findServiceItemById(serviceItemId);
 
         if (serviceItemRepository.existsByTitleAndServiceIdNot(payload.title(), serviceItemId)) {
@@ -127,11 +127,24 @@ public class ServiceItemService {
 
         Category relatedCategory = categoryService.findCategoryById(payload.categoryId());
 
+        List<String> images = new ArrayList<>();
+        if (image != null && !image.isEmpty()) {
+            try {
+                String url = (String) imageUploader.uploader()
+                        .upload(image.getBytes(), ObjectUtils.emptyMap())
+                        .get("url");
+                images.add(url);
+            } catch (IOException e) {
+                throw new BadRequestException("Errore durante l'upload dell'immagine");
+            }
+        }
+
         found.setTitle(payload.title());
         found.setDurationMin(payload.durationMin());
         found.setPrice(payload.price());
         found.setShortDescription(payload.shortDescription());
         found.setDescription(payload.description());
+        found.setImages(images);
         found.setCategory(relatedCategory);
 
         ServiceItem modifiedServiceItem = serviceItemRepository.save(found);

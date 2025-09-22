@@ -16,8 +16,6 @@ public record NewProductDTO (
                             BigDecimal price,
                             @NotEmpty(message = "La descrizione non può essere vuota")
                             String description,
-                            @NotEmpty(message = "Deve esserci almeno un'immagine")
-                            List<String> images,
                             @NotNull(message = "Lo stock è obbligatorio")
                             @Positive(message = "Lo stock deve essere un numero positivo")
                             Integer stock,

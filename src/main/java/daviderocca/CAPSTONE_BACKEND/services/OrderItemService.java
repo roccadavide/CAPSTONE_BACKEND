@@ -59,38 +59,43 @@ public class OrderItemService {
         );
     }
 
-    public OrderItemResponseDTO saveOrderItem(NewOrderItemDTO payload) {
+    public OrderItemResponseDTO saveOrderItem(NewOrderItemDTO payload, Order order) {
 
         Product relatedProduct = productService.findProductById(payload.productId());
-        Order relatedOrder = orderService.findOrderById(payload.orderId());
+        if (relatedProduct == null) {
+            throw new IllegalArgumentException("Prodotto non trovato per ID: " + payload.productId());
+        }
 
-        OrderItem newOrderItem = new OrderItem(payload.quantity(), payload.price(), relatedProduct, relatedOrder);
+        OrderItem newOrderItem = new OrderItem(payload.quantity(), relatedProduct.getPrice(), relatedProduct, order);
         OrderItem savedOrderItem = orderItemRepository.save(newOrderItem);
 
-        log.info("OrderItem {} salvato per ordine {} e prodotto {}", savedOrderItem.getOrderItemId(), relatedOrder.getOrderId(), relatedProduct.getProductId());
+        log.info("OrderItem {} salvato per ordine {} e prodotto {}", savedOrderItem.getOrderItemId(), order.getOrderId(), relatedProduct.getProductId());
 
         return new OrderItemResponseDTO(savedOrderItem.getOrderItemId(), savedOrderItem.getQuantity(),
-                savedOrderItem.getPrice(), relatedProduct.getProductId(), relatedOrder.getOrderId());
+                savedOrderItem.getPrice(), relatedProduct.getProductId(), order.getOrderId());
     }
 
     @Transactional
-    public OrderItemResponseDTO findOrderItemByIdAndUpdate(UUID orderItemId, NewOrderItemDTO payload) {
+    public OrderItemResponseDTO findOrderItemByIdAndUpdate(UUID orderItemId, NewOrderItemDTO payload, Order order) {
         OrderItem found = findOrderItemById(orderItemId);
 
         Product relatedProduct = productService.findProductById(payload.productId());
-        Order relatedOrder = orderService.findOrderById(payload.orderId());
+
+        if (relatedProduct == null) {
+            throw new IllegalArgumentException("Prodotto non trovato per ID: " + payload.productId());
+        }
 
         found.setQuantity(payload.quantity());
-        found.setPrice(payload.price());
+        found.setPrice(relatedProduct.getPrice());
         found.setProduct(relatedProduct);
-        found.setOrder(relatedOrder);
+        found.setOrder(order);
 
         OrderItem modifiedOrderItem = orderItemRepository.save(found);
 
-        log.info("OrderItem {} modificato per ordine {} e prodotto {}", modifiedOrderItem.getOrderItemId(), relatedOrder.getOrderId(), relatedProduct.getProductId());
+        log.info("OrderItem {} modificato per ordine {} e prodotto {}", modifiedOrderItem.getOrderItemId(), order.getOrderId(), relatedProduct.getProductId());
 
         return new OrderItemResponseDTO(modifiedOrderItem.getOrderItemId(), modifiedOrderItem.getQuantity(),
-                modifiedOrderItem.getPrice(), relatedProduct.getProductId(), relatedOrder.getOrderId());
+                modifiedOrderItem.getPrice(), relatedProduct.getProductId(), order.getOrderId());
     }
 
     @Transactional

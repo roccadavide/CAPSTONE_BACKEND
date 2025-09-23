@@ -1,9 +1,12 @@
 package daviderocca.CAPSTONE_BACKEND.services;
 
 import daviderocca.CAPSTONE_BACKEND.DTO.NewOrderDTO;
+import daviderocca.CAPSTONE_BACKEND.DTO.NewOrderItemDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.OrderItemResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.OrderResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.Order;
+import daviderocca.CAPSTONE_BACKEND.entities.OrderItem;
+import daviderocca.CAPSTONE_BACKEND.entities.Product;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.enums.OrderStatus;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
@@ -29,6 +32,9 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private ProductService productService;
+
+    @Autowired
     private UserService userService;
 
     public Page<OrderResponseDTO> findAllOrders(int pageNumber, int pageSize, String sort) {
@@ -49,8 +55,13 @@ public class OrderService {
             return new OrderResponseDTO(
                     order.getOrderId(),
                     order.getCustomerName(),
+                    order.getCustomerSurname(),
                     order.getCustomerEmail(),
                     order.getCustomerPhone(),
+                    order.getAddress(),
+                    order.getCity(),
+                    order.getZipCode(),
+                    order.getCountry(),
                     order.getOrderStatus(),
                     order.getCreatedAt(),
                     order.getUser() != null ? order.getUser().getUserId() : null,
@@ -77,8 +88,9 @@ public class OrderService {
                 ))
                 .toList();
 
-        return new OrderResponseDTO(found.getOrderId(), found.getCustomerName(),
-                found.getCustomerEmail(), found.getCustomerPhone(), found.getOrderStatus(),
+        return new OrderResponseDTO(found.getOrderId(), found.getCustomerName(), found.getCustomerSurname(),
+                found.getCustomerEmail(), found.getCustomerPhone(), found.getAddress(),
+                found.getCity(), found.getZipCode(), found.getCountry(), found.getOrderStatus(),
                 found.getCreatedAt(), found.getUser() != null ? found.getUser().getUserId() : null,
                 orderItemDTOs);
 
@@ -86,12 +98,31 @@ public class OrderService {
 
     public OrderResponseDTO saveOrder(NewOrderDTO payload) {
 
+        if (payload.items() == null || payload.items().isEmpty()) {
+            throw new IllegalArgumentException("L'ordine deve contenere almeno un prodotto.");
+        }
+
         User relatedUser = null;
         if (payload.userId() != null) {
             relatedUser = userService.findUserById(payload.userId());
+            if (relatedUser == null) {
+                throw new IllegalArgumentException("Utente non trovato per l'ID fornito.");
+            }
         }
 
-        Order newOrder = new Order(payload.customerName(), payload.customerEmail(), payload.customerPhone(), relatedUser);
+        Order newOrder = new Order(payload.customerName(), payload.customerSurname(), payload.customerEmail(), payload.customerPhone(),
+                payload.address(), payload.city(), payload.zipCode(), payload.country(), relatedUser);
+
+        for (NewOrderItemDTO itemDTO : payload.items()) {
+            Product product = productService.findProductById(itemDTO.productId());
+            if (product == null) {
+                throw new IllegalArgumentException("Prodotto non trovato per ID: " + itemDTO.productId());
+            }
+
+            OrderItem orderItem = new OrderItem(itemDTO.quantity(), product.getPrice(), product, newOrder);
+            newOrder.getOrderItems().add(orderItem);
+        }
+
         Order savedOrder = orderRepository.save(newOrder);
 
         List<OrderItemResponseDTO> orderItemDTOs = savedOrder.getOrderItems().stream()
@@ -106,8 +137,9 @@ public class OrderService {
 
         log.info("Ordine {} creato (stato: {}).", savedOrder.getOrderId(), savedOrder.getOrderStatus());
 
-        return new OrderResponseDTO(savedOrder.getOrderId(), savedOrder.getCustomerName(),
-                savedOrder.getCustomerEmail(), savedOrder.getCustomerPhone(), savedOrder.getOrderStatus(),
+        return new OrderResponseDTO(savedOrder.getOrderId(), savedOrder.getCustomerName(), savedOrder.getCustomerSurname(),
+                savedOrder.getCustomerEmail(), savedOrder.getCustomerPhone(), savedOrder.getAddress(),
+                savedOrder.getCity(), savedOrder.getZipCode(), savedOrder.getCountry(), savedOrder.getOrderStatus(),
                 savedOrder.getCreatedAt(), relatedUser != null ? relatedUser.getUserId() : null, orderItemDTOs);
     }
 
@@ -115,24 +147,43 @@ public class OrderService {
     public OrderResponseDTO findOrderByIdAndUpdate(UUID orderId, NewOrderDTO payload) {
         Order found = findOrderById(orderId);
 
-
         if (found.getOrderStatus().equals(OrderStatus.COMPLETED) || found.getOrderStatus().equals(OrderStatus.CANCELED)) {
             throw new BadRequestException("L'ordine non è modificabile in stato " + found.getOrderStatus());
         }
 
-        User relatedUser = null;
-        if (payload.userId() != null) {
-            relatedUser = userService.findUserById(payload.userId());
+        if (payload.items() == null || payload.items().isEmpty()) {
+            throw new IllegalArgumentException("L'ordine deve contenere almeno un prodotto.");
         }
 
         found.setCustomerName(payload.customerName());
+        found.setCustomerSurname(payload.customerSurname());
         found.setCustomerEmail(payload.customerEmail());
         found.setCustomerPhone(payload.customerPhone());
+        found.setAddress(payload.address());
+        found.setCity(payload.city());
+        found.setZipCode(payload.zipCode());
+        found.setCountry(payload.country());
 
         if (payload.userId() != null) {
-            found.setUser(userService.findUserById(payload.userId()));
+            User relatedUser = userService.findUserById(payload.userId());
+            if (relatedUser == null) {
+                throw new IllegalArgumentException("Utente non trovato per l'ID fornito.");
+            }
+            found.setUser(relatedUser);
         } else {
             found.setUser(null);
+        }
+
+        found.getOrderItems().clear();
+
+        for (NewOrderItemDTO itemDTO : payload.items()) {
+            Product product = productService.findProductById(itemDTO.productId());
+            if (product == null) {
+                throw new IllegalArgumentException("Prodotto non trovato per ID: " + itemDTO.productId());
+            }
+
+            OrderItem orderItem = new OrderItem(itemDTO.quantity(), product.getPrice(), product, found);
+            found.getOrderItems().add(orderItem);
         }
 
         Order modifiedOrder = orderRepository.save(found);
@@ -149,9 +200,21 @@ public class OrderService {
 
         log.info("Ordine {} aggiornato (stato: {}).", modifiedOrder.getOrderId(), modifiedOrder.getOrderStatus());
 
-        return new OrderResponseDTO(modifiedOrder.getOrderId(), modifiedOrder.getCustomerName(),
-                modifiedOrder.getCustomerEmail(), modifiedOrder.getCustomerPhone(), modifiedOrder.getOrderStatus(),
-                modifiedOrder.getCreatedAt(), relatedUser != null ? relatedUser.getUserId() : null, orderItemDTOs);
+        return new OrderResponseDTO(
+                modifiedOrder.getOrderId(),
+                modifiedOrder.getCustomerName(),
+                modifiedOrder.getCustomerSurname(),
+                modifiedOrder.getCustomerEmail(),
+                modifiedOrder.getCustomerPhone(),
+                modifiedOrder.getAddress(),
+                modifiedOrder.getCity(),
+                modifiedOrder.getZipCode(),
+                modifiedOrder.getCountry(),
+                modifiedOrder.getOrderStatus(),
+                modifiedOrder.getCreatedAt(),
+                modifiedOrder.getUser() != null ? modifiedOrder.getUser().getUserId() : null,
+                orderItemDTOs
+        );
     }
 
     @Transactional
@@ -176,8 +239,9 @@ public class OrderService {
                 .toList();
 
         log.info("Stato ordine {} aggiornato a {}", updatedOrder.getOrderId(), updatedOrder.getOrderStatus());
-        return new OrderResponseDTO(updatedOrder.getOrderId(), updatedOrder.getCustomerName(),
-                updatedOrder.getCustomerEmail(), updatedOrder.getCustomerPhone(), updatedOrder.getOrderStatus(),
+        return new OrderResponseDTO(updatedOrder.getOrderId(), updatedOrder.getCustomerName(), updatedOrder.getCustomerSurname(),
+                updatedOrder.getCustomerEmail(), updatedOrder.getCustomerPhone(), updatedOrder.getAddress(),
+                updatedOrder.getCity(), updatedOrder.getZipCode(), updatedOrder.getCountry(), updatedOrder.getOrderStatus(),
                 updatedOrder.getCreatedAt(), updatedOrder.getUser() != null ? updatedOrder.getUser().getUserId() : null,
                 orderItemDTOs);
     }

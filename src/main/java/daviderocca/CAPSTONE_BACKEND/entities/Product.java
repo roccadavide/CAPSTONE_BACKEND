@@ -27,6 +27,9 @@ public class Product {
 
     private BigDecimal price;
 
+    @Column(name = "short_description")
+    private String shortDescription;
+
     private String description;
 
     @ElementCollection
@@ -41,9 +44,10 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems;
 
-    public Product(String name, BigDecimal price, String description, List<String> images, int stock, Category category) {
+    public Product(String name, BigDecimal price,String shortDescription, String description, List<String> images, int stock, Category category) {
         this.name = name;
         this.price = price;
+        this.shortDescription = shortDescription;
         this.description = description;
         this.images = images;
         this.stock = stock;
@@ -56,6 +60,7 @@ public class Product {
                 "productId=" + productId +
                 ", name='" + name + '\'' +
                 ", price='" + price + '\'' +
+                ", shortDescription='" + shortDescription + '\'' +
                 ", description='" + description + '\'' +
                 ", images=" + images +
                 ", stock=" + stock +

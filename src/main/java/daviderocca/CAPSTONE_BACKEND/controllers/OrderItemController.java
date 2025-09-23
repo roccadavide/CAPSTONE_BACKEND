@@ -2,6 +2,7 @@ package daviderocca.CAPSTONE_BACKEND.controllers;
 
 import daviderocca.CAPSTONE_BACKEND.DTO.NewOrderItemDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.OrderItemResponseDTO;
+import daviderocca.CAPSTONE_BACKEND.entities.Order;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.services.OrderItemService;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +52,7 @@ public class OrderItemController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public OrderItemResponseDTO createOrderItem(@Validated @RequestBody NewOrderItemDTO payload, BindingResult bindingResult) {
+    public OrderItemResponseDTO createOrderItem(@Validated @RequestBody NewOrderItemDTO payload, Order order, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             throw new BadRequestException(bindingResult.getAllErrors().stream()
@@ -59,8 +60,8 @@ public class OrderItemController {
                     .collect(Collectors.joining(", ")));
         }
 
-        log.info("Richiesta creazione item ordine {} con prodotto {}", payload.orderId(), payload.productId());
-        return orderItemService.saveOrderItem(payload);
+        log.info("Richiesta creazione orderItem con prodotto {} e quantità {}", payload.productId(), payload.quantity());
+        return orderItemService.saveOrderItem(payload, order);
     }
 
     // ---------------------------------- PUT ----------------------------------
@@ -71,6 +72,7 @@ public class OrderItemController {
     public OrderItemResponseDTO updateOrderItem(
             @PathVariable UUID orderItemId,
             @Validated @RequestBody NewOrderItemDTO payload,
+            Order order,
             BindingResult bindingResult
     ) {
 
@@ -81,7 +83,7 @@ public class OrderItemController {
         }
 
         log.info("Richiesta aggiornamento item ordine {} con prodotto {}", orderItemId, payload.productId());
-        return orderItemService.findOrderItemByIdAndUpdate(orderItemId, payload);
+        return orderItemService.findOrderItemByIdAndUpdate(orderItemId, payload, order);
     }
 
     // ---------------------------------- DELETE ----------------------------------

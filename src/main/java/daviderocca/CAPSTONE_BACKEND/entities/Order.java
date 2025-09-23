@@ -27,11 +27,22 @@ public class Order {
     @Column(name = "customer_name")
     private String customerName;
 
+    @Column(name = "customer_surname")
+    private String customerSurname;
+
     @Column(name = "customer_email")
     private String customerEmail;
 
     @Column(name = "customer_phone")
     private String customerPhone;
+
+    private String address;
+
+    private String city;
+
+    private String zipCode;
+
+    private String country;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")
@@ -47,10 +58,17 @@ public class Order {
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 
-    public Order(String customerPhone, String customerEmail, String customerName, User user) {
-        this.customerPhone = customerPhone;
-        this.customerEmail = customerEmail;
+    public Order(String customerName, String customerSurname, String customerEmail,
+                 String customerPhone, String address, String city, String zipCode,
+                 String country, User user) {
         this.customerName = customerName;
+        this.customerSurname = customerSurname;
+        this.customerEmail = customerEmail;
+        this.customerPhone = customerPhone;
+        this.address = address;
+        this.city = city;
+        this.zipCode = zipCode;
+        this.country = country;
         this.user = user;
     }
 
@@ -59,10 +77,17 @@ public class Order {
         return "Order{" +
                 "orderId=" + orderId +
                 ", customerName='" + customerName + '\'' +
+                ", customerSurname='" + customerSurname + '\'' +
                 ", customerEmail='" + customerEmail + '\'' +
                 ", customerPhone='" + customerPhone + '\'' +
+                ", address='" + address + '\'' +
+                ", city='" + city + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                ", country='" + country + '\'' +
                 ", orderStatus=" + orderStatus +
                 ", createdAt=" + createdAt +
+                ", user=" + user +
+                ", orderItems=" + orderItems +
                 '}';
     }
 }

@@ -9,8 +9,13 @@ import java.util.UUID;
 public record OrderResponseDTO(
         UUID orderId,
         String customerName,
+        String customerSurname,
         String customerEmail,
         String customerPhone,
+        String shippingAddress,
+        String shippingCity,
+        String shippingZip,
+        String shippingCountry,
         OrderStatus orderStatus,
         LocalDateTime createdAt,
         UUID userId,

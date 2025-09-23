@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 public record NewProductDTO (
@@ -14,6 +13,8 @@ public record NewProductDTO (
                             @NotNull(message = "Il prezzo è obbligatorio")
                             @Positive(message = "Il prezzo deve essere un valore positivo")
                             BigDecimal price,
+                            @NotEmpty(message = "La descrizione breve non può essere vuota")
+                            String shortDescription,
                             @NotEmpty(message = "La descrizione non può essere vuota")
                             String description,
                             @NotNull(message = "Lo stock è obbligatorio")

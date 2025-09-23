@@ -5,17 +5,37 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 
+import java.util.List;
 import java.util.UUID;
 
-public record NewOrderDTO (
-                           @NotEmpty(message = "Il nome del cliente non può essere vuoto")
-                           String customerName,
-                           @Email(message = "Email non valida")
-                           @NotEmpty(message = "L'email del cliente non può essere vuota")
-                           String customerEmail,
-                           @NotEmpty(message = "Il numero di telefono non può essere vuoto")
-                           @Pattern(regexp = "\\+?[0-9]{7,15}", message = "Numero di telefono non valido")
-                           String customerPhone,
-                           UUID userId
-)
-{}
+public record NewOrderDTO(
+        @NotEmpty(message = "Il nome del cliente non può essere vuoto")
+        String customerName,
+
+        @NotEmpty(message = "Il cognome del cliente non può essere vuoto")
+        String customerSurname,
+
+        @Email(message = "Email non valida")
+        @NotEmpty(message = "L'email del cliente non può essere vuota")
+        String customerEmail,
+
+        @NotEmpty(message = "Il numero di telefono non può essere vuoto")
+        @Pattern(regexp = "\\+?[0-9]{7,15}", message = "Numero di telefono non valido")
+        String customerPhone,
+
+        @NotEmpty(message = "L'indirizzo non può essere vuoto")
+        String address,
+
+        @NotEmpty(message = "La città non può essere vuota")
+        String city,
+
+        @NotEmpty(message = "Il CAP non può essere vuoto")
+        String zipCode,
+
+        @NotEmpty(message = "Il paese non può essere vuoto")
+        String country,
+        UUID userId,
+
+        @NotEmpty(message = "L'ordine deve contenere almeno un prodotto")
+        List<NewOrderItemDTO> items
+) {}

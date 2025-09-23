@@ -34,7 +34,7 @@ public class OrderController {
     public Page<OrderResponseDTO> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sort
+            @RequestParam(defaultValue = "customerName") String sort
     ) {
         log.info("Richiesta elenco ordini - pagina: {}, size: {}, sort: {}", page, size, sort);
         return orderService.findAllOrders(page, size, sort);

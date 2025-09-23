@@ -45,6 +45,7 @@ public class ProductService {
                 product.getProductId(),
                 product.getName(),
                 product.getPrice(),
+                product.getShortDescription(),
                 product.getDescription(),
                 product.getImages(),
                 product.getStock(),
@@ -63,6 +64,7 @@ public class ProductService {
                 found.getProductId(),
                 found.getName(),
                 found.getPrice(),
+                found.getShortDescription(),
                 found.getDescription(),
                 found.getImages(),
                 found.getStock(),
@@ -90,7 +92,7 @@ public class ProductService {
             }
         }
 
-        Product newProduct = new Product(payload.name(), payload.price(), payload.description(), images, payload.stock(), relatedCategory);
+        Product newProduct = new Product(payload.name(), payload.price(),payload.shortDescription(), payload.description(), images, payload.stock(), relatedCategory);
         Product savedProduct = productRepository.save(newProduct);
 
 
@@ -98,7 +100,7 @@ public class ProductService {
         log.info("Prodotto {} ({} - categoria {}) creato", savedProduct.getProductId(), savedProduct.getName(), relatedCategory.getCategoryId());
 
         return new ProductResponseDTO(savedProduct.getProductId(), savedProduct.getName(),
-                savedProduct.getPrice(), savedProduct.getDescription(), savedProduct.getImages(),
+                savedProduct.getPrice(),savedProduct.getShortDescription(), savedProduct.getDescription(), savedProduct.getImages(),
                 savedProduct.getStock(), relatedCategory.getCategoryId());
     }
 
@@ -126,6 +128,7 @@ public class ProductService {
 
         found.setName(payload.name());
         found.setPrice(payload.price());
+        found.setShortDescription(payload.shortDescription());
         found.setDescription(payload.description());
         found.setImages(images);
         found.setStock(payload.stock());
@@ -136,7 +139,7 @@ public class ProductService {
         log.info("Prodotto {} aggiornato (categoria: {})", modifiedProduct.getProductId(), relatedCategory.getCategoryKey());
 
         return new ProductResponseDTO(modifiedProduct.getProductId(), modifiedProduct.getName(),
-                modifiedProduct.getPrice(), modifiedProduct.getDescription(), modifiedProduct.getImages(),
+                modifiedProduct.getPrice(), modifiedProduct.getShortDescription(), modifiedProduct.getDescription(), modifiedProduct.getImages(),
                 modifiedProduct.getStock(), relatedCategory.getCategoryId());
     }
 

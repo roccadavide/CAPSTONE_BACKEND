@@ -8,6 +8,7 @@ public record ProductResponseDTO(
         UUID productId,
         String name,
         BigDecimal price,
+        String shortDescription,
         String description,
         List<String> images,
         int stock,

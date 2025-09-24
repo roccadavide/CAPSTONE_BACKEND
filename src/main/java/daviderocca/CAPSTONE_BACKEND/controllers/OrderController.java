@@ -28,7 +28,7 @@ public class OrderController {
 
     // ---------------------------------- GET ----------------------------------
 
-    @GetMapping
+    @GetMapping("/getAll")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ADMIN')")
     public Page<OrderResponseDTO> getAllOrders(

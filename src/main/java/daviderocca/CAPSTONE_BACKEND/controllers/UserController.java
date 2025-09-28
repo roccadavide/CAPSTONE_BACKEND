@@ -1,6 +1,8 @@
 package daviderocca.CAPSTONE_BACKEND.controllers;
 
+import daviderocca.CAPSTONE_BACKEND.DTO.NewPasswordDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.NewUserDTO;
+import daviderocca.CAPSTONE_BACKEND.DTO.UpdateUserDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.UserResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
@@ -52,7 +54,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserResponseDTO getUserByEmail(@PathVariable String email) {
         log.info("Richiesta utente per email {}", email);
-        return userService.findByUserByEmailAndConvert(email);
+        return userService.findUserByEmailAndConvert(email);
     }
 
     @GetMapping("/me")
@@ -84,7 +86,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserResponseDTO updateUser(
             @PathVariable UUID userId,
-            @Validated @RequestBody NewUserDTO payload,
+            @Validated @RequestBody UpdateUserDTO payload,
             BindingResult bindingResult
     ) {
 
@@ -95,10 +97,30 @@ public class UserController {
         }
 
         log.info("Richiesta aggiornamento utente {}", userId);
-        return userService.findUserByIdAndUpdate(userId, payload);
+        return userService.findUserByIdAndUpdateProfile(userId, payload);
     }
 
     // ---------------------------------- PATCH ----------------------------------
+
+    @PatchMapping("/{userId}/password")
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponseDTO patchPassword(
+            @PathVariable UUID userId,
+            @Validated @RequestBody NewPasswordDTO payload,
+            BindingResult bindingResult
+    ) {
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException(
+                    bindingResult.getAllErrors()
+                            .stream()
+                            .map(e -> e.getDefaultMessage())
+                            .collect(Collectors.joining(", "))
+            );
+        }
+
+        log.info("Richiesta aggiornamento password utente {}", userId);
+        return userService.findUserByIdAndPatchPassword(userId, payload);
+    }
 
     @PatchMapping("/{userId}/make-admin")
     @ResponseStatus(HttpStatus.OK)

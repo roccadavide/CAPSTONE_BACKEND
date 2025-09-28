@@ -127,13 +127,16 @@ public class ServiceItemService {
 
         Category relatedCategory = categoryService.findCategoryById(payload.categoryId());
 
-        List<String> images = new ArrayList<>();
+        List<String> images = found.getImages();
+
         if (image != null && !image.isEmpty()) {
             try {
                 String url = (String) imageUploader.uploader()
                         .upload(image.getBytes(), ObjectUtils.emptyMap())
                         .get("url");
+                images = new ArrayList<>();
                 images.add(url);
+                found.setImages(images);
             } catch (IOException e) {
                 throw new BadRequestException("Errore durante l'upload dell'immagine");
             }
@@ -144,8 +147,11 @@ public class ServiceItemService {
         found.setPrice(payload.price());
         found.setShortDescription(payload.shortDescription());
         found.setDescription(payload.description());
-        found.setImages(images);
         found.setCategory(relatedCategory);
+
+        if (image != null && !image.isEmpty()) {
+            found.setImages(images);
+        }
 
         ServiceItem modifiedServiceItem = serviceItemRepository.save(found);
 

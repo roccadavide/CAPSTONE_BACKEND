@@ -35,8 +35,11 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        if (path.equals("/users") || path.equals("/users/register") || path.equals("/categories")
-                || path.equals("/serviceItems") || path.equals("/products") || path.equals("/orders")) {
+            if (
+                path.equals("/users/register")
+                || path.equals("/categories")
+                || path.equals("/serviceItems")
+                || (request.getMethod().equals("GET") && path.startsWith("/products"))) {
             filterChain.doFilter(request, response);
             return;
         }

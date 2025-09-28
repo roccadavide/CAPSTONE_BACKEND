@@ -2,6 +2,7 @@ package daviderocca.CAPSTONE_BACKEND.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,14 +28,9 @@ public class SecConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/users",
-                                "/noAuth/login",
-                                    "/serviceItems",
-                                "/categories",
-                                "/products",
-                                "/orders"
-                        ).permitAll()
+                        .requestMatchers("/noAuth/login", "/users/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+                                .requestMatchers("/serviceItems", "/categories").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

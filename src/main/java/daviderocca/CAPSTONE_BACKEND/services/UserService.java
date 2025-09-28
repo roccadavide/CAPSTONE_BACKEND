@@ -1,9 +1,12 @@
 package daviderocca.CAPSTONE_BACKEND.services;
 
+import daviderocca.CAPSTONE_BACKEND.DTO.NewPasswordDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.NewUserDTO;
+import daviderocca.CAPSTONE_BACKEND.DTO.UpdateUserDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.UserResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.enums.Role;
+import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.DuplicateResourceException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedOperationException;
@@ -63,7 +66,7 @@ public class UserService {
         return this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
     }
 
-    public UserResponseDTO findByUserByEmailAndConvert(String email) {
+    public UserResponseDTO findUserByEmailAndConvert(String email) {
         User found = this.userRepository.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException(email));
 
         return new UserResponseDTO(
@@ -92,7 +95,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO findUserByIdAndUpdate (UUID idUser, NewUserDTO payload) {
+    public UserResponseDTO findUserByIdAndUpdateProfile (UUID idUser, UpdateUserDTO payload) {
         User found = findUserById(idUser);
 
         if (!found.getEmail().equals(payload.email()))
@@ -109,11 +112,35 @@ public class UserService {
         found.setName(payload.name());
         found.setSurname(payload.surname());
         found.setEmail(payload.email());
-        found.setPassword(bcrypt.encode(payload.password()));
         found.setPhone(payload.phone());
 
         User modifiedUser = this.userRepository.save(found);
         log.info("User modificato correttamente");
+        return new UserResponseDTO(modifiedUser.getUserId(), modifiedUser.getName(), modifiedUser.getSurname(), modifiedUser.getEmail(),
+                modifiedUser.getPhone(), modifiedUser.getRole());
+    }
+
+    @Transactional
+    public UserResponseDTO findUserByIdAndPatchPassword (UUID idUser, NewPasswordDTO payload) {
+        User found = findUserById(idUser);
+
+        if (!bcrypt.matches(payload.oldPassword(), found.getPassword())) {
+            throw new BadRequestException("La password inserita è errata!");
+        }
+
+        if (bcrypt.matches(payload.newPassword(), found.getPassword())) {
+            throw new BadRequestException("La nuova password non può coincidere con quella vecchia.");
+        }
+
+        if (!payload.newPassword().equals(payload.confirmNewPassword())) {
+            throw new BadRequestException("La nuova password e la conferma non coincidono.");
+        }
+
+        found.setPassword(bcrypt.encode(payload.newPassword()));
+
+        User modifiedUser = this.userRepository.save(found);
+        log.info("Password dell'user con email {} modificata correttamente!", modifiedUser.getEmail());
+
         return new UserResponseDTO(modifiedUser.getUserId(), modifiedUser.getName(), modifiedUser.getSurname(), modifiedUser.getEmail(),
                 modifiedUser.getPhone(), modifiedUser.getRole());
     }

@@ -114,13 +114,16 @@ public class ProductService {
 
         Category relatedCategory = categoryService.findCategoryById(payload.categoryId());
 
-        List<String> images = new ArrayList<>();
+        List<String> images = found.getImages();
+
         if (image != null && !image.isEmpty()) {
             try {
                 String url = (String) imageUploader.uploader()
                         .upload(image.getBytes(), ObjectUtils.emptyMap())
                         .get("url");
+                images = new ArrayList<>();
                 images.add(url);
+                found.setImages(images);
             } catch (IOException e) {
                 throw new BadRequestException("Errore durante l'upload dell'immagine");
             }
@@ -130,9 +133,12 @@ public class ProductService {
         found.setPrice(payload.price());
         found.setShortDescription(payload.shortDescription());
         found.setDescription(payload.description());
-        found.setImages(images);
         found.setStock(payload.stock());
         found.setCategory(relatedCategory);
+
+        if (image != null && !image.isEmpty()) {
+            found.setImages(images);
+        }
 
         Product modifiedProduct = productRepository.save(found);
 

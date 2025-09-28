@@ -12,6 +12,7 @@ import daviderocca.CAPSTONE_BACKEND.enums.OrderStatus;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
 import daviderocca.CAPSTONE_BACKEND.repositories.OrderRepository;
+import daviderocca.CAPSTONE_BACKEND.repositories.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class OrderService {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Autowired
     private UserService userService;
@@ -96,6 +100,7 @@ public class OrderService {
 
     }
 
+    @Transactional
     public OrderResponseDTO saveOrder(NewOrderDTO payload) {
 
         if (payload.items() == null || payload.items().isEmpty()) {
@@ -118,6 +123,11 @@ public class OrderService {
             if (product == null) {
                 throw new IllegalArgumentException("Prodotto non trovato per ID: " + itemDTO.productId());
             }
+
+            if(product.getStock() < itemDTO.quantity()) throw new IllegalStateException("Stock insufficiente per " + product.getName());
+
+            product.setStock(product.getStock() - itemDTO.quantity());
+            productRepository.save(product);
 
             OrderItem orderItem = new OrderItem(itemDTO.quantity(), product.getPrice(), product, newOrder);
             newOrder.getOrderItems().add(orderItem);
@@ -254,8 +264,14 @@ public class OrderService {
             throw new BadRequestException("Non è possibile eliminare un ordine in stato " + found.getOrderStatus());
         }
 
+        for (OrderItem item : found.getOrderItems()) {
+            Product product = item.getProduct();
+            product.setStock(product.getStock() + item.getQuantity());
+            productRepository.save(product);
+        }
+
         orderRepository.delete(found);
-        log.info("Order {} è stato eliminato correttamente!", found.getOrderId());
+        log.info("Order {} è stato eliminato e stock ripristinato!", found.getOrderId());
     }
 
 

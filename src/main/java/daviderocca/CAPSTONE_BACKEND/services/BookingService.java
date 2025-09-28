@@ -107,14 +107,6 @@ public class BookingService {
             throw new BadRequestException("L'orario di inizio non può essere nel passato!");
         }
 
-        bookingRepository.findAll().forEach(existing -> {
-            if (existing.getService().getServiceId().equals(payload.serviceId()) &&
-                    existing.getStartTime().isBefore(payload.endTime()) &&
-                    existing.getEndTime().isAfter(payload.startTime())) {
-                throw new BadRequestException("Esiste già una prenotazione in questo intervallo per il servizio scelto!");
-            }
-        });
-
         ServiceItem relatedServiceItem = serviceItemService.findServiceItemById(payload.serviceId());
 
         User relatedUser = null;
@@ -122,12 +114,17 @@ public class BookingService {
             relatedUser = userService.findUserById(payload.userId());
         }
 
+        if (!bookingRepository.findOverlappingBookings(payload.serviceId(), payload.startTime(), payload.endTime()).isEmpty()) {
+            throw new BadRequestException("Esiste già una prenotazione in questo intervallo per il servizio scelto!");
+        }
+
         Booking newBooking =  new Booking(payload.customerName(), payload.customerEmail(), payload.customerPhone(), payload.startTime(),
                 payload.endTime(), payload.notes(), relatedServiceItem, relatedUser);
 
         Booking savedNewBooking = this.bookingRepository.save(newBooking);
         log.info("La prenotazione {} dell'utente con email {} è stata salvata!",
-                savedNewBooking.getBookingId(), relatedUser.getEmail());
+                savedNewBooking.getBookingId(), savedNewBooking.getCustomerEmail());
+
 
         return new BookingResponseDTO(savedNewBooking.getBookingId(), savedNewBooking.getCustomerName(),
                 savedNewBooking.getCustomerEmail(), savedNewBooking.getCustomerPhone(), savedNewBooking.getStartTime(),
@@ -148,19 +145,9 @@ public class BookingService {
             throw new BadRequestException("L'orario di inizio non può essere successivo a quello di fine!");
         }
 
-        bookingRepository.findAll().forEach(existing -> {
-            if (!existing.getBookingId().equals(idBooking) &&
-                    existing.getService().getServiceId().equals(payload.serviceId()) &&
-                    existing.getStartTime().isBefore(payload.endTime()) &&
-                    existing.getEndTime().isAfter(payload.startTime())) {
-                throw new BadRequestException("Esiste già una prenotazione in questo intervallo per il servizio scelto!");
-            }
-        });
-
-        if (!found.getCustomerEmail().equals(payload.customerEmail()))
-            this.bookingRepository.findByCustomerEmail(payload.customerEmail()).ifPresent(booking -> {
-                throw new DuplicateResourceException("Esiste già una prenotazione con email " + payload.customerEmail());
-            });
+        if (!bookingRepository.findOverlappingBookings(payload.serviceId(), payload.startTime(), payload.endTime()).isEmpty()) {
+            throw new BadRequestException("Esiste già una prenotazione in questo intervallo per il servizio scelto!");
+        }
 
         ServiceItem relatedServiceItem = serviceItemService.findServiceItemById(payload.serviceId());
 
@@ -193,7 +180,7 @@ public class BookingService {
     public BookingResponseDTO updateBookingStatus(UUID bookingId, BookingStatus newStatus) {
         Booking found = findBookingById(bookingId);
 
-        if (found.getBookingStatus().equals(BookingStatus.CANCELLED) || found.getBookingStatus().equals(BookingStatus.COMPLETE)) {
+        if (found.getBookingStatus().equals(BookingStatus.CANCELLED) || found.getBookingStatus().equals(BookingStatus.COMPLETED)) {
             throw new BadRequestException("Non puoi aggiornare lo stato di una prenotazione " + found.getBookingStatus());
         }
 

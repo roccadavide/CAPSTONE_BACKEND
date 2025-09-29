@@ -34,7 +34,6 @@ public record NewOrderDTO(
 
         @NotEmpty(message = "Il paese non può essere vuoto")
         String country,
-        UUID userId,
 
         @NotEmpty(message = "L'ordine deve contenere almeno un prodotto")
         List<NewOrderItemDTO> items

@@ -1,16 +1,11 @@
 package daviderocca.CAPSTONE_BACKEND.services;
 
-import daviderocca.CAPSTONE_BACKEND.DTO.NewOrderDTO;
-import daviderocca.CAPSTONE_BACKEND.DTO.NewOrderItemDTO;
-import daviderocca.CAPSTONE_BACKEND.DTO.OrderItemResponseDTO;
-import daviderocca.CAPSTONE_BACKEND.DTO.OrderResponseDTO;
-import daviderocca.CAPSTONE_BACKEND.entities.Order;
-import daviderocca.CAPSTONE_BACKEND.entities.OrderItem;
-import daviderocca.CAPSTONE_BACKEND.entities.Product;
-import daviderocca.CAPSTONE_BACKEND.entities.User;
+import daviderocca.CAPSTONE_BACKEND.DTO.*;
+import daviderocca.CAPSTONE_BACKEND.entities.*;
 import daviderocca.CAPSTONE_BACKEND.enums.OrderStatus;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
+import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedException;
 import daviderocca.CAPSTONE_BACKEND.repositories.OrderRepository;
 import daviderocca.CAPSTONE_BACKEND.repositories.ProductRepository;
 import jakarta.transaction.Transactional;
@@ -100,23 +95,47 @@ public class OrderService {
 
     }
 
+    public List<OrderResponseDTO> findOrdersByEmailAndConvert(String customerEmail) {
+        List<Order> orders = this.orderRepository.findByCustomerEmail(customerEmail);
+
+        return orders.stream().map(order -> {
+            List<OrderItemResponseDTO> orderItemDTOs = order.getOrderItems().stream()
+                    .map(item -> new OrderItemResponseDTO(
+                            item.getOrderItemId(),
+                            item.getQuantity(),
+                            item.getPrice(),
+                            item.getProduct().getProductId(),
+                            item.getOrder().getOrderId()
+                    ))
+                    .toList();
+
+            return new OrderResponseDTO(
+                    order.getOrderId(),
+                    order.getCustomerName(),
+                    order.getCustomerSurname(),
+                    order.getCustomerEmail(),
+                    order.getCustomerPhone(),
+                    order.getAddress(),
+                    order.getCity(),
+                    order.getZipCode(),
+                    order.getCountry(),
+                    order.getOrderStatus(),
+                    order.getCreatedAt(),
+                    order.getUser() != null ? order.getUser().getUserId() : null,
+                    orderItemDTOs
+            );
+        }).toList();
+    }
+
     @Transactional
-    public OrderResponseDTO saveOrder(NewOrderDTO payload) {
+    public OrderResponseDTO saveOrder(NewOrderDTO payload, User currentUser) {
 
         if (payload.items() == null || payload.items().isEmpty()) {
             throw new IllegalArgumentException("L'ordine deve contenere almeno un prodotto.");
         }
 
-        User relatedUser = null;
-        if (payload.userId() != null) {
-            relatedUser = userService.findUserById(payload.userId());
-            if (relatedUser == null) {
-                throw new IllegalArgumentException("Utente non trovato per l'ID fornito.");
-            }
-        }
-
         Order newOrder = new Order(payload.customerName(), payload.customerSurname(), payload.customerEmail(), payload.customerPhone(),
-                payload.address(), payload.city(), payload.zipCode(), payload.country(), relatedUser);
+                payload.address(), payload.city(), payload.zipCode(), payload.country(), currentUser);
 
         for (NewOrderItemDTO itemDTO : payload.items()) {
             Product product = productService.findProductById(itemDTO.productId());
@@ -150,11 +169,11 @@ public class OrderService {
         return new OrderResponseDTO(savedOrder.getOrderId(), savedOrder.getCustomerName(), savedOrder.getCustomerSurname(),
                 savedOrder.getCustomerEmail(), savedOrder.getCustomerPhone(), savedOrder.getAddress(),
                 savedOrder.getCity(), savedOrder.getZipCode(), savedOrder.getCountry(), savedOrder.getOrderStatus(),
-                savedOrder.getCreatedAt(), relatedUser != null ? relatedUser.getUserId() : null, orderItemDTOs);
+                savedOrder.getCreatedAt(), savedOrder.getUser() != null ? savedOrder.getUser().getUserId() : null, orderItemDTOs);
     }
 
     @Transactional
-    public OrderResponseDTO findOrderByIdAndUpdate(UUID orderId, NewOrderDTO payload) {
+    public OrderResponseDTO findOrderByIdAndUpdate(UUID orderId, NewOrderDTO payload, User currentUser) {
         Order found = findOrderById(orderId);
 
         if (found.getOrderStatus().equals(OrderStatus.COMPLETED) || found.getOrderStatus().equals(OrderStatus.CANCELED)) {
@@ -165,6 +184,14 @@ public class OrderService {
             throw new IllegalArgumentException("L'ordine deve contenere almeno un prodotto.");
         }
 
+        for (OrderItem oldItem : found.getOrderItems()) {
+            Product oldProduct = oldItem.getProduct();
+            oldProduct.setStock(oldProduct.getStock() + oldItem.getQuantity());
+            productRepository.save(oldProduct);
+        }
+
+        found.getOrderItems().clear();
+
         found.setCustomerName(payload.customerName());
         found.setCustomerSurname(payload.customerSurname());
         found.setCustomerEmail(payload.customerEmail());
@@ -173,24 +200,20 @@ public class OrderService {
         found.setCity(payload.city());
         found.setZipCode(payload.zipCode());
         found.setCountry(payload.country());
-
-        if (payload.userId() != null) {
-            User relatedUser = userService.findUserById(payload.userId());
-            if (relatedUser == null) {
-                throw new IllegalArgumentException("Utente non trovato per l'ID fornito.");
-            }
-            found.setUser(relatedUser);
-        } else {
-            found.setUser(null);
-        }
-
-        found.getOrderItems().clear();
+        found.setUser(currentUser);
 
         for (NewOrderItemDTO itemDTO : payload.items()) {
             Product product = productService.findProductById(itemDTO.productId());
             if (product == null) {
                 throw new IllegalArgumentException("Prodotto non trovato per ID: " + itemDTO.productId());
             }
+
+            if (product.getStock() < itemDTO.quantity()) {
+                throw new IllegalStateException("Stock insufficiente per " + product.getName());
+            }
+
+            product.setStock(product.getStock() - itemDTO.quantity());
+            productRepository.save(product);
 
             OrderItem orderItem = new OrderItem(itemDTO.quantity(), product.getPrice(), product, found);
             found.getOrderItems().add(orderItem);
@@ -257,10 +280,20 @@ public class OrderService {
     }
 
     @Transactional
-    public void findOrderByIdAndDelete(UUID orderId) {
+    public void findOrderByIdAndDelete(UUID orderId, User currentUser) {
         Order found = findOrderById(orderId);
 
-        if (found.getOrderStatus().equals(OrderStatus.COMPLETED) || found.getOrderStatus().equals(OrderStatus.CANCELED)) {
+        if (currentUser.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
+            orderRepository.delete(found);
+            return;
+        }
+
+        if (found.getUser() == null || !found.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new UnauthorizedException("Non puoi cancellare un ordine non tuo.");
+        }
+
+        if (found.getOrderStatus().equals(OrderStatus.COMPLETED) || found.getOrderStatus().equals(OrderStatus.SHIPPED) || found.getOrderStatus().equals(OrderStatus.CANCELED)) {
             throw new BadRequestException("Non è possibile eliminare un ordine in stato " + found.getOrderStatus());
         }
 

@@ -1,5 +1,5 @@
 package daviderocca.CAPSTONE_BACKEND.enums;
 
 public enum OrderStatus {
-    PENDING, PAID, CANCELED, COMPLETED
+    PENDING, SHIPPED, CANCELED, COMPLETED
 }

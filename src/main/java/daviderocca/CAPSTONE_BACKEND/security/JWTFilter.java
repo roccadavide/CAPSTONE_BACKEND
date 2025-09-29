@@ -38,7 +38,8 @@ public class JWTFilter extends OncePerRequestFilter {
             if (
                 path.equals("/users/register")
                 || path.equals("/categories")
-                || path.equals("/serviceItems")
+                || (request.getMethod().equals("GET") && path.startsWith("/serviceItems"))
+                || (request.getMethod().equals("GET") && path.startsWith("/availabilities"))
                 || (request.getMethod().equals("GET") && path.startsWith("/products"))) {
             filterChain.doFilter(request, response);
             return;
@@ -49,7 +50,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Inserire il token nell'Authorization Header nel formato corretto!");
+            filterChain.doFilter(request, response);
             return;
         }
 

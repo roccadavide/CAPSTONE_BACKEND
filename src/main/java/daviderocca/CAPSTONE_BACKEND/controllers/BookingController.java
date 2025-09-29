@@ -2,6 +2,7 @@ package daviderocca.CAPSTONE_BACKEND.controllers;
 
 import daviderocca.CAPSTONE_BACKEND.DTO.BookingResponseDTO;
 import daviderocca.CAPSTONE_BACKEND.DTO.NewBookingDTO;
+import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.enums.BookingStatus;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.services.BookingService;
@@ -11,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,7 +31,7 @@ public class BookingController {
 
     // ---------------------------------- GET ----------------------------------
 
-    @GetMapping
+    @GetMapping("/getAll")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ADMIN')")
     public Page<BookingResponseDTO> getAllBookings(
@@ -49,7 +52,7 @@ public class BookingController {
 
     @GetMapping("/email/{email}")
     @ResponseStatus(HttpStatus.OK)
-    public BookingResponseDTO getBookingByEmail(@PathVariable String email) {
+    public List<BookingResponseDTO> getBookingsByEmail(@PathVariable String email) {
         log.info("Richiesta prenotazione per email {}", email);
         return bookingService.findBookingByEmailAndConvert(email);
     }
@@ -58,7 +61,9 @@ public class BookingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingResponseDTO createBooking(@Validated @RequestBody NewBookingDTO payload, BindingResult bindingResult) {
+    public BookingResponseDTO createBooking(@Validated @RequestBody NewBookingDTO payload,
+                                            Authentication authentication,
+                                            BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             throw new BadRequestException(bindingResult.getAllErrors().stream()
@@ -66,18 +71,20 @@ public class BookingController {
                     .collect(Collectors.joining(", ")));
         }
 
+        User currentUser = authentication != null ? (User) authentication.getPrincipal() : null;
+
         log.info("Richiesta creazione prenotazione {}", payload.customerEmail());
-        return bookingService.saveBooking(payload);
+        return bookingService.saveBooking(payload, currentUser);
     }
 
     // ---------------------------------- PUT ----------------------------------
 
     @PutMapping("/{bookingId}")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('ADMIN')")
     public BookingResponseDTO updateBooking(
             @PathVariable UUID bookingId,
             @Validated @RequestBody NewBookingDTO payload,
+            Authentication authentication,
             BindingResult bindingResult
     ) {
 
@@ -87,8 +94,10 @@ public class BookingController {
                     .collect(Collectors.joining(", ")));
         }
 
+        User currentUser = authentication != null ? (User) authentication.getPrincipal() : null;
+
         log.info("Richiesta aggiornamento prenotazione {}", bookingId);
-        return bookingService.findBookingByIdAndUpdate(bookingId, payload);
+        return bookingService.findBookingByIdAndUpdate(bookingId, payload, currentUser);
     }
 
     // ---------------------------------- PATCH ----------------------------------
@@ -109,9 +118,11 @@ public class BookingController {
 
     @DeleteMapping("/{bookingId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
-    public void deleteBooking(@PathVariable UUID bookingId) {
+    public void deleteBooking(@PathVariable UUID bookingId, Authentication authentication) {
+
+        User currentUser = authentication != null ? (User) authentication.getPrincipal() : null;
+
         log.info("Richiesta eliminazione prenotazione {}", bookingId);
-        bookingService.findBookingByIdAndDelete(bookingId);
+        bookingService.findBookingByIdAndDelete(bookingId, currentUser);
     }
 }

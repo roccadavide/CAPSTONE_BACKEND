@@ -6,9 +6,11 @@ import daviderocca.CAPSTONE_BACKEND.entities.Booking;
 import daviderocca.CAPSTONE_BACKEND.entities.ServiceItem;
 import daviderocca.CAPSTONE_BACKEND.entities.User;
 import daviderocca.CAPSTONE_BACKEND.enums.BookingStatus;
+import daviderocca.CAPSTONE_BACKEND.enums.Role;
 import daviderocca.CAPSTONE_BACKEND.exceptions.BadRequestException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.DuplicateResourceException;
 import daviderocca.CAPSTONE_BACKEND.exceptions.ResourceNotFoundException;
+import daviderocca.CAPSTONE_BACKEND.exceptions.UnauthorizedException;
 import daviderocca.CAPSTONE_BACKEND.repositories.BookingRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -79,25 +82,27 @@ public class BookingService {
     }
 
 
-    public BookingResponseDTO findBookingByEmailAndConvert(String customerEmail) {
-        Booking found = this.bookingRepository.findByCustomerEmail(customerEmail).orElseThrow(()-> new ResourceNotFoundException(customerEmail));
+    public List<BookingResponseDTO> findBookingByEmailAndConvert(String customerEmail) {
+        List<Booking> bookings = this.bookingRepository.findByCustomerEmail(customerEmail);
 
-        return new BookingResponseDTO(
-                found.getBookingId(),
-                found.getCustomerName(),
-                found.getCustomerEmail(),
-                found.getCustomerPhone(),
-                found.getStartTime(),
-                found.getEndTime(),
-                found.getBookingStatus(),
-                found.getNotes(),
-                found.getCreatedAt(),
-                found.getService() != null ? found.getService().getServiceId() : null,
-                found.getUser() != null ? found.getUser().getUserId() : null
-        );
+        return bookings.stream()
+                .map(b -> new BookingResponseDTO(
+                        b.getBookingId(),
+                        b.getCustomerName(),
+                        b.getCustomerEmail(),
+                        b.getCustomerPhone(),
+                        b.getStartTime(),
+                        b.getEndTime(),
+                        b.getBookingStatus(),
+                        b.getNotes(),
+                        b.getCreatedAt(),
+                        b.getService() != null ? b.getService().getServiceId() : null,
+                        b.getUser() != null ? b.getUser().getUserId() : null
+                ))
+                .toList();
     }
 
-    public BookingResponseDTO saveBooking(NewBookingDTO payload) {
+    public BookingResponseDTO saveBooking(NewBookingDTO payload, User currentUser) {
 
         if (payload.startTime().isAfter(payload.endTime())) {
             throw new BadRequestException("L'orario di inizio non può essere successivo a quello di fine!");
@@ -107,33 +112,38 @@ public class BookingService {
             throw new BadRequestException("L'orario di inizio non può essere nel passato!");
         }
 
-        ServiceItem relatedServiceItem = serviceItemService.findServiceItemById(payload.serviceId());
-
-        User relatedUser = null;
-        if (payload.userId() != null) {
-            relatedUser = userService.findUserById(payload.userId());
-        }
-
         if (!bookingRepository.findOverlappingBookings(payload.serviceId(), payload.startTime(), payload.endTime()).isEmpty()) {
             throw new BadRequestException("Esiste già una prenotazione in questo intervallo per il servizio scelto!");
         }
 
+        ServiceItem relatedServiceItem = serviceItemService.findServiceItemById(payload.serviceId());
+
+
         Booking newBooking =  new Booking(payload.customerName(), payload.customerEmail(), payload.customerPhone(), payload.startTime(),
-                payload.endTime(), payload.notes(), relatedServiceItem, relatedUser);
+                payload.endTime(), payload.notes(), relatedServiceItem, currentUser);
 
         Booking savedNewBooking = this.bookingRepository.save(newBooking);
         log.info("La prenotazione {} dell'utente con email {} è stata salvata!",
                 savedNewBooking.getBookingId(), savedNewBooking.getCustomerEmail());
 
 
-        return new BookingResponseDTO(savedNewBooking.getBookingId(), savedNewBooking.getCustomerName(),
-                savedNewBooking.getCustomerEmail(), savedNewBooking.getCustomerPhone(), savedNewBooking.getStartTime(),
-                savedNewBooking.getEndTime(), savedNewBooking.getBookingStatus(), savedNewBooking.getNotes(),
-                savedNewBooking.getCreatedAt(), payload.serviceId(), payload.userId());
+        return new BookingResponseDTO(savedNewBooking.getBookingId(),
+                savedNewBooking.getCustomerName(),
+                savedNewBooking.getCustomerEmail(),
+                savedNewBooking.getCustomerPhone(),
+                savedNewBooking.getStartTime(),
+                savedNewBooking.getEndTime(),
+                savedNewBooking.getBookingStatus(),
+                savedNewBooking.getNotes(),
+                savedNewBooking.getCreatedAt(),
+                payload.serviceId(),
+                savedNewBooking.getUser() != null ? savedNewBooking.getUser().getUserId() : null
+        );
     }
 
+
     @Transactional
-    public BookingResponseDTO findBookingByIdAndUpdate (UUID idBooking, NewBookingDTO payload) {
+    public BookingResponseDTO findBookingByIdAndUpdate (UUID idBooking, NewBookingDTO payload, User currentUser) {
         Booking found = findBookingById(idBooking);
 
         if (found.getBookingStatus().name().equals("CANCELLED") ||
@@ -151,12 +161,6 @@ public class BookingService {
 
         ServiceItem relatedServiceItem = serviceItemService.findServiceItemById(payload.serviceId());
 
-        User relatedUser = null;
-        if (payload.userId() != null) {
-            relatedUser = userService.findUserById(payload.userId());
-        }
-
-
         found.setCustomerName(payload.customerName());
         found.setCustomerEmail(payload.customerEmail());
         found.setCustomerPhone(payload.customerPhone());
@@ -164,7 +168,7 @@ public class BookingService {
         found.setEndTime(payload.endTime());
         found.setNotes(payload.notes());
         found.setService(relatedServiceItem);
-        found.setUser(relatedUser);
+        found.setUser(currentUser);
 
         Booking updatedBooking = this.bookingRepository.save(found);
 
@@ -173,7 +177,7 @@ public class BookingService {
         return new BookingResponseDTO(updatedBooking.getBookingId(), updatedBooking.getCustomerName(),
                 updatedBooking.getCustomerEmail(), updatedBooking.getCustomerPhone(), updatedBooking.getStartTime(),
                 updatedBooking.getEndTime(), updatedBooking.getBookingStatus(), updatedBooking.getNotes(),
-                updatedBooking.getCreatedAt(), payload.serviceId(), payload.userId());
+                updatedBooking.getCreatedAt(), payload.serviceId(), currentUser.getUserId());
     }
 
     @Transactional
@@ -206,8 +210,24 @@ public class BookingService {
 
 
     @Transactional
-    public void findBookingByIdAndDelete(UUID idBooking) {
+    public void findBookingByIdAndDelete(UUID idBooking, User currentUser) {
         Booking found = findBookingById(idBooking);
+
+
+        if (currentUser.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
+            bookingRepository.delete(found);
+            return;
+        }
+
+        if (found.getUser() == null || !found.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new UnauthorizedException("Non puoi cancellare una prenotazione non tua.");
+        }
+
+        if (found.getStartTime().isBefore(LocalDateTime.now().plusHours(24))) {
+            throw new BadRequestException("Puoi cancellare la prenotazione solo fino a 24 ore prima");
+        }
+
         this.bookingRepository.delete(found);
         log.info("La prenotazione {} è stata eliminata!", found.getBookingId());
     }

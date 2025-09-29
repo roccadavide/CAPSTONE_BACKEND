@@ -23,7 +23,6 @@ public record NewBookingDTO(
                             LocalDateTime endTime,
                             String notes,
                             @NotNull(message = "ID del servizio obbligatorio")
-                            UUID serviceId,
-                            UUID userId
+                            UUID serviceId
 )
 {}

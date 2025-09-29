@@ -30,7 +30,11 @@ public class SecConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/noAuth/login", "/users/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                                .requestMatchers("/serviceItems", "/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/serviceItems/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/bookings").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/availabilities/**").permitAll()
+                                .requestMatchers( "/categories").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

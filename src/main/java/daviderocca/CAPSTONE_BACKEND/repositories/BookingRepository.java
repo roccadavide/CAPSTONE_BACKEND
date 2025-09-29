@@ -13,7 +13,7 @@ import java.util.UUID;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
-    Optional<Booking> findByCustomerEmail(String customerEmail);
+    List<Booking> findByCustomerEmail(String customerEmail);
 
     List<Booking> findByStartTimeLessThanAndEndTimeGreaterThan(LocalDateTime endExclusive, LocalDateTime startExclusive);
 

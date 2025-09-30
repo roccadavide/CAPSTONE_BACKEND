@@ -39,6 +39,7 @@ public class JWTFilter extends OncePerRequestFilter {
                 path.equals("/users/register")
                 || path.equals("/categories")
                 || (request.getMethod().equals("GET") && path.startsWith("/serviceItems"))
+                || (request.getMethod().equals("GET") && path.startsWith("/results"))
                 || (request.getMethod().equals("GET") && path.startsWith("/availabilities"))
                 || (request.getMethod().equals("GET") && path.startsWith("/products"))) {
             filterChain.doFilter(request, response);

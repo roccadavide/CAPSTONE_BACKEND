@@ -33,6 +33,9 @@ public class Category {
     @OneToMany(mappedBy = "category")
     private List<ServiceItem> services;
 
+    @OneToMany(mappedBy = "category")
+    private List<Result> results;
+
     public Category(String categoryKey, String label) {
         this.categoryKey = categoryKey;
         this.label = label;

@@ -30,6 +30,7 @@ public class Product {
     @Column(name = "short_description")
     private String shortDescription;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ElementCollection

@@ -1,40 +1,35 @@
 package daviderocca.CAPSTONE_BACKEND.entities;
 
-
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "services")
+@Table(name = "results")
 @NoArgsConstructor
 @Getter
 @Setter
-public class ServiceItem {
+public class Result {
 
     @Id
     @GeneratedValue
     @Setter(AccessLevel.NONE)
-    @Column(name = "service_id")
-    private UUID serviceId;
+    @Column(name = "result_id")
+    private UUID resultId;
 
     private String title;
 
-    @Column(name = "duration_min")
-    private int durationMin;
-
-    private BigDecimal price;
-
+    @Column(name = "short_description")
     private String shortDescription;
 
     @Column(columnDefinition = "TEXT")
-    private  String description;
+    private String description;
 
     @ElementCollection
     private List<String> images;
@@ -43,30 +38,27 @@ public class ServiceItem {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToMany(mappedBy = "service")
-    private List<Booking> bookings;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public ServiceItem(String title, int durationMin, BigDecimal price, String shortDescription, String description, List<String> images, Category category) {
+    public Result(String title, String shortDescription, String description, List<String> images, Category category) {
         this.title = title;
-        this.durationMin = durationMin;
-        this.price = price;
         this.shortDescription = shortDescription;
         this.description = description;
         this.images = images;
         this.category = category;
     }
 
-
     @Override
     public String toString() {
-        return "Service{" +
-                "serviceId=" + serviceId +
+        return "Result{" +
+                "resultId=" + resultId +
                 ", title='" + title + '\'' +
-                ", durationMin=" + durationMin +
-                ", price='" + price + '\'' +
                 ", shortDescription='" + shortDescription + '\'' +
                 ", description='" + description + '\'' +
                 ", images=" + images +
+                ", category=" + (category != null ? category.getLabel() : "null") +
+                ", createdAt=" + createdAt +
                 '}';
     }
 }

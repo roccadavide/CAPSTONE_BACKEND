@@ -31,6 +31,7 @@ public class SecConfig {
                         .requestMatchers("/noAuth/login", "/users/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/serviceItems/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/results").permitAll()
                         .requestMatchers(HttpMethod.POST, "/orders").permitAll()
                         .requestMatchers(HttpMethod.POST, "/bookings").permitAll()
                         .requestMatchers(HttpMethod.GET, "/availabilities/**").permitAll()
